@@ -45,4 +45,14 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: npm-package
-      - run: npm publish tabby-better-sidebar-miller-*.tgz --access public --provenance
+      - name: Check registry for an already published version
+        id: registry
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "tabby-better-sidebar-miller@$VERSION" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.registry.outputs.published == 'false'
+        run: npm publish tabby-better-sidebar-miller-*.tgz --access public --provenance
