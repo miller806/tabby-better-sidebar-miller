@@ -159,17 +159,22 @@ tab-header .sidebar-plus-terminal-tags {
 }
 
 tab-header .sidebar-plus-connection-status {
-    flex: 0 0 auto;
+    grid-column: 4;
+    grid-row: 1;
+    margin-right: 22px;
     font-size: 10px;
-    line-height: 17px;
+    line-height: 20px;
     color: #65c784;
 
     &.disconnected {
         color: #ff8585;
-        background: rgba(235, 75, 75, .13);
-        border-radius: 4px;
-        padding: 0 5px;
     }
+}
+
+tab-header.sidebar-plus-has-tags:has(> .sidebar-plus-connection-status) {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+
+    > .name { padding-right: 0; }
 }
 
 tab-header .sidebar-plus-terminal-tag {

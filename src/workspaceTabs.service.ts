@@ -504,6 +504,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             const existing = header.querySelector('.sidebar-plus-terminal-tags')
             if (!enabled || !paired) {
                 existing?.remove()
+                header.querySelector('.sidebar-plus-connection-status')?.remove()
                 header.classList.remove('sidebar-plus-has-tags')
                 return
             }
@@ -516,6 +517,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             const status = sshPanes.length ? (disconnected ? 'disconnected' : 'connected') : ''
             if (!tags.length && !status) {
                 existing?.remove()
+                header.querySelector('.sidebar-plus-connection-status')?.remove()
                 header.classList.remove('sidebar-plus-has-tags')
                 return
             }
@@ -525,6 +527,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 return
             }
             existing?.remove()
+            header.querySelector('.sidebar-plus-connection-status')?.remove()
             const rail = document.createElement('span')
             rail.className = 'sidebar-plus-terminal-tags'
             rail.setAttribute('data-tags', signature)
@@ -534,8 +537,8 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 indicator.className = `sidebar-plus-connection-status ${status}`
                 indicator.title = this.i18n.t(disconnected ? 'Disconnected' : 'Connected')
                 indicator.setAttribute('aria-label', indicator.title)
-                indicator.textContent = disconnected ? `● ${indicator.title}` : '●'
-                rail.appendChild(indicator)
+                indicator.textContent = '●'
+                header.insertBefore(indicator, header.querySelector('.buttons'))
             }
             for (const tag of tags) {
                 const chip = document.createElement('span')
@@ -637,6 +640,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             h.classList.remove(HIDDEN_CLASS)
             h.classList.remove('sidebar-plus-has-tags')
             h.querySelector('.sidebar-plus-terminal-tags')?.remove()
+            h.querySelector('.sidebar-plus-connection-status')?.remove()
         })
     }
 }

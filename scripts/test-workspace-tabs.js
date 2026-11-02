@@ -57,7 +57,7 @@ function fixture (storage = { sidebarPlusActiveWorkspace: 'pro' }) {
         setAttribute (key, value) { this.attributes[key] = value },
         getAttribute (key) { return this.attributes[key] },
         appendChild (child) { this.children.push(child) },
-        remove () { if (this.parent) this.parent.rail = null },
+        remove () { if (this.parent) this.parent[this.className.startsWith("sidebar-plus-connection-status") ? "indicator" : "rail"] = null },
     }) }
     const context = {
         exports, document, window: { localStorage: storage },
@@ -87,7 +87,7 @@ function fixture (storage = { sidebarPlusActiveWorkspace: 'pro' }) {
     const add = tab => {
         app.tabs.push(tab)
         const classes = new Set()
-        headers.push({ getBoundingClientRect: () => ({left:0,right:150,top:0,bottom:60}), parentElement: strip, rail: null, querySelector (selector) { return selector === '.sidebar-plus-terminal-tags' ? this.rail : null }, insertBefore (rail) { this.rail = rail; rail.parent = this }, classList: { toggle: (key, value) => value ? classes.add(key) : classes.delete(key), remove: key => classes.delete(key) }, classes })
+        headers.push({ getBoundingClientRect: () => ({left:0,right:150,top:0,bottom:60}), parentElement: strip, rail: null, indicator: null, querySelector (selector) { return selector === '.sidebar-plus-terminal-tags' ? this.rail : selector === '.sidebar-plus-connection-status' ? this.indicator : null }, insertBefore (element) { this[element.className.startsWith('sidebar-plus-connection-status') ? 'indicator' : 'rail'] = element; element.parent = this }, classList: { toggle: (key, value) => value ? classes.add(key) : classes.delete(key), remove: key => classes.delete(key) }, classes })
         return tab
     }
     const hidden = index => headers[index].classes.has('sidebar-plus-workspace-tab-hidden')
@@ -100,18 +100,19 @@ test('SSH header status updates on disconnect and reconnect without polling and 
     const changes = new Subject()
     const tab = f.add({ profile: { id: 'p', type: 'ssh' }, session: {}, sessionChanged$: changes })
     f.service.sync()
-    assert.equal(f.headers[0].rail.children[0].className, 'sidebar-plus-connection-status connected')
+    assert.equal(f.headers[0].indicator.className, 'sidebar-plus-connection-status connected')
     assert.equal(changes.observers.length, 1)
     tab.session = null; changes.next(null)
     await new Promise(resolve => setTimeout(resolve, 100))
-    assert.equal(f.headers[0].rail.children[0].textContent, '● Disconnected')
-    assert.equal(f.headers[0].rail.children[1].textContent, 'production')
+    assert.equal(f.headers[0].indicator.title, 'Disconnected')
+    assert.equal(f.headers[0].rail.children[0].textContent, 'production')
     tab.session = {}; changes.next(tab.session)
     await new Promise(resolve => setTimeout(resolve, 100))
-    assert.equal(f.headers[0].rail.children[0].textContent, '●')
+    assert.equal(f.headers[0].indicator.textContent, '●')
     f.config.store.sidebarPlus.showTerminalTabTags = false; f.service.sync()
     assert.equal(changes.observers.length, 0)
     assert.equal(f.headers[0].rail, null)
+    assert.equal(f.headers[0].indicator, null)
     f.config.store.sidebarPlus.showTerminalTabTags = true; f.service.sync()
     f.service.ngOnDestroy(); assert.equal(changes.observers.length, 0)
 })
@@ -123,9 +124,9 @@ test('SSH status is per session, includes untagged servers and warns for a disco
     f.add({ getAllTabs: () => [{ profile: { type: 'ssh' }, session: {} }, { profile: { type: 'ssh' }, session: null }] })
     f.add({ profile: { type: 'local' }, session: null })
     f.service.sync()
-    assert.equal(f.headers[0].rail.children[0].textContent, '●')
-    assert.equal(f.headers[1].rail.children[0].textContent, '● Disconnected')
-    assert.equal(f.headers[2].rail.children[0].textContent, '● Disconnected')
+    assert.equal(f.headers[0].indicator.textContent, '●')
+    assert.equal(f.headers[1].indicator.title, 'Disconnected')
+    assert.equal(f.headers[2].indicator.title, 'Disconnected')
     assert.equal(f.headers[3].rail, null)
     f.service.ngOnDestroy()
 })

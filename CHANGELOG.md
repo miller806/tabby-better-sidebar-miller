@@ -3,6 +3,11 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.22 (2026-11-02)
+
+- Move the SSH connection indicator to a compact green or red dot after the server title, leaving the tag row exclusively for custom labels.
+- Show the localized connection state on hover and retain event-driven disconnect/reconnect updates.
+
 ## 1.0.21 (2026-11-02)
 
 - Show SSH connection status alongside terminal header tags: a green dot while connected and a red, localized Disconnected badge when the session ends.
