@@ -10,6 +10,7 @@ import { SidebarPlusSftpComponent } from './components/sftpPanel.component'
 import { SidebarPlusSftpBrowserComponent } from './components/sftpBrowser.component'
 import { ConfirmModalComponent } from './components/confirmModal.component'
 import { SnippetsModalComponent } from './components/snippetsModal.component'
+import { TagsModalComponent } from './components/tagsModal.component'
 import { NoteModalComponent } from './components/noteModal.component'
 import { PasteGroupModalComponent } from './components/pasteGroupModal.component'
 import { TunnelsModalComponent } from './components/tunnelsModal.component'
@@ -57,6 +58,7 @@ const SIDEBAR_PANEL_CONTRIBUTION: BetterPanelContribution = {
         ConfirmModalComponent,
         SnippetsModalComponent,
         NoteModalComponent,
+        TagsModalComponent,
         PasteGroupModalComponent,
         TunnelsModalComponent,
         IconPickerModalComponent,

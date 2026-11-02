@@ -1,6 +1,6 @@
 {
-  "name": "tabby-better-sidebar",
-  "version": "1.0.10",
+  "name": "tabby-better-sidebar-miller",
+  "version": "1.0.11",
   "description": "Enhanced connection sidebar for Tabby: a contextual SFTP browser inside the sidebar itself, pinned favorites, live connection status, active sessions, workspaces, SSH tunnels, drag & drop (including dragging remote files out to the OS), a transfer manager, and a custom icon picker.",
   "keywords": [
     "tabby-plugin",
@@ -37,11 +37,11 @@
   "typings": "dist/src/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TooMuhtsh/tabby-better-sidebar.git"
+    "url": "https://github.com/miller806/tabby-better-sidebar-miller.git"
   },
-  "homepage": "https://github.com/TooMuhtsh/tabby-better-sidebar#readme",
+  "homepage": "https://github.com/miller806/tabby-better-sidebar-miller#readme",
   "bugs": {
-    "url": "https://github.com/TooMuhtsh/tabby-better-sidebar/issues"
+    "url": "https://github.com/miller806/tabby-better-sidebar-miller/issues"
   },
   "scripts": {
     "build": "webpack --progress --color",

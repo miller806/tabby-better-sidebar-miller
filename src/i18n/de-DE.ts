@@ -5,6 +5,12 @@
  * Formal register throughout ("Sie"), matching the project's chosen tone.
  */
 const de_DE: Record<string, string> = {
+    "Tags: {name}": "Tags: {name}",
+    "Separate tags with commas or new lines. Clear to remove all tags.": "Tags durch Kommas oder Zeilenumbrüche trennen. Leeren entfernt alle Tags.",
+    "Edit tags...": "Tags bearbeiten…",
+    "Hide imported SSH folder": "Importierten SSH-Ordner ausblenden",
+    "Hide connections imported from .ssh/config in the sidebar.": "Aus .ssh/config importierte Verbindungen in der Seitenleiste ausblenden.",
+
     // sftpPanel.component.ts — header line, auto-return-to-Profiles notices
     'SSH session lost ({tab}) — back to Profiles view': 'SSH-Sitzung verloren ({tab}) — zurück zur Profilübersicht',
     'SSH session lost — back to Profiles view': 'SSH-Sitzung verloren — zurück zur Profilübersicht',

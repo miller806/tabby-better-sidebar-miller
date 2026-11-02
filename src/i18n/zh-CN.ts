@@ -5,6 +5,12 @@
  * Plurals only carry the `other` category: Chinese has no grammatical number.
  */
 const zh_CN: Record<string, string> = {
+    "Tags: {name}": "标签：{name}",
+    "Separate tags with commas or new lines. Clear to remove all tags.": "用逗号或换行分隔标签，清空即可移除全部标签。",
+    "Edit tags...": "编辑标签…",
+    "Hide imported SSH folder": "隐藏 SSH 导入文件夹",
+    "Hide connections imported from .ssh/config in the sidebar.": "在侧边栏中隐藏从 .ssh/config 导入的连接。",
+
     // sftpPanel.component.ts — header line, auto-return-to-Profiles notices
     'SSH session lost ({tab}) — back to Profiles view': 'SSH 会话已断开（{tab}）——返回配置视图',
     'SSH session lost — back to Profiles view': 'SSH 会话已断开——返回配置视图',

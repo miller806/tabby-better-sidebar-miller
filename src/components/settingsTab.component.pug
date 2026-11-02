@@ -48,6 +48,14 @@
       .feature-card
         .form-line.block-switch
           .header
+            .title {{ 'Hide imported SSH folder' | translate }}
+            .description {{ 'Hide connections imported from .ssh/config in the sidebar.' | translate }}
+          .control
+            toggle([ngModel]="blockOn('hideImportedSsh')", (ngModelChange)="setBlock('hideImportedSsh', $event)")
+
+      .feature-card
+        .form-line.block-switch
+          .header
             .title {{ lblShowSidebar }} #[i.fas.fa-info-circle.info-hint([title]='lblShowSidebarHint')]
             .description {{ lblShowSidebarDesc }}
           .control

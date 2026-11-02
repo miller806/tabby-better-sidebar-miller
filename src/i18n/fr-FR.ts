@@ -19,6 +19,12 @@
  * zero change).
  */
 const fr_FR: Record<string, string> = {
+    "Tags: {name}": "Étiquettes : {name}",
+    "Separate tags with commas or new lines. Clear to remove all tags.": "Séparez les étiquettes par des virgules ou des retours à la ligne. Videz pour tout retirer.",
+    "Edit tags...": "Modifier les étiquettes…",
+    "Hide imported SSH folder": "Masquer le dossier SSH importé",
+    "Hide connections imported from .ssh/config in the sidebar.": "Masquer les connexions importées de .ssh/config dans la barre latérale.",
+
     // sftpPanel.component.ts — header line, auto-return-to-Profiles notices
     'SSH session lost ({tab}) — back to Profiles view': 'Session SSH perdue ({tab}) — retour sur la vue Profils',
     'SSH session lost — back to Profiles view': 'Session SSH perdue — retour sur la vue Profils',

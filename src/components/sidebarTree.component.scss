@@ -1340,3 +1340,18 @@ sidebar-plus-tree.sidebar-plus-wrap-names.sidebar-plus-wrap-unlimited .item-name
     -webkit-line-clamp: none;
     overflow: visible;
 }
+
+.profile-tag {
+    display: inline-block;
+    flex: 0 1 auto;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 1px 5px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    font-size: 10px;
+    line-height: 15px;
+    opacity: .8;
+}

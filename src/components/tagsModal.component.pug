@@ -1,0 +1,9 @@
+.modal-header
+    h5.modal-title.no-wrap {{ 'Tags: {name}' | translate:{ name: targetName } }}
+    button.btn-close((click)='cancel()')
+.modal-body
+    textarea.form-control(#field, rows='3', [(ngModel)]='text', (keydown.control.enter)='save()')
+    .text-muted.small.mt-2 {{ 'Separate tags with commas or new lines. Clear to remove all tags.' | translate }}
+.modal-footer
+    button.btn.btn-secondary((click)='cancel()') {{ 'Cancel' | translate }}
+    button.btn.btn-primary((click)='save()') {{ 'Save' | translate }}

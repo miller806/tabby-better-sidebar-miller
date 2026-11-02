@@ -1,3 +1,52 @@
+# tabby-better-sidebar-miller
+
+Personal fork of [TooMuhtsh/tabby-better-sidebar](https://github.com/TooMuhtsh/tabby-better-sidebar), licensed under MIT.
+
+## Miller additions
+
+- Hide the `Imported from .ssh/config` folder by default, including its search results. Restore it in **Settings → Better Sidebar → General → Hide imported SSH folder**. This only affects this sidebar, and does not remove SSH configuration or stop active sessions.
+- Right-click a server → **Manage → Edit tags…**. Separate multiple tags with commas or new lines. Tags appear next to server names in the profile tree, favorites and search results, and can be searched. Clear the field to remove them.
+- Tags are stored by profile ID under `sidebarPlus.profileTags` in Tabby's configuration and survive restarting. A duplicated profile has a new ID and starts without tags.
+
+## Install this fork from npm
+
+After publication, close Tabby and run these commands in its plugin directory (`%APPDATA%\tabby\plugins` on Windows):
+
+```sh
+npm uninstall tabby-better-sidebar
+npm install tabby-better-sidebar-miller
+```
+
+Restart Tabby completely. Install only one of the original plugin and this fork, since both provide the same sidebar.
+
+## Publish
+
+```sh
+npm ci --ignore-scripts
+npm run build:prod
+npm run lint:i18n
+npm pack --dry-run
+npm login
+npm publish
+```
+
+The first publish requires an npm account with access to this package name. For later releases, increment the version first. npm distributes the built plugin, so installations do not need this source checkout; changes still need to be maintained in this fork.
+
+### Build and publish on GitHub
+
+`.github/workflows/publish.yml` builds and uploads an installable npm tarball on pushes and pull requests. After the first manual npm publication, configure this package's **Trusted Publisher** on npmjs.com:
+
+- GitHub owner: `miller806`
+- Repository: `tabby-better-sidebar-miller`
+- Workflow filename: `publish.yml`
+- Allow direct publishing with `npm publish`.
+
+Then increment `package.json` and `package-lock.json` together, push them, and publish a GitHub Release whose tag matches the package version (for example `v1.0.12`). The workflow publishes the built tarball with OIDC, without an npm token in GitHub. See [npm trusted publishing documentation](https://docs.npmjs.com/trusted-publishers/).
+
+---
+
+The original upstream documentation follows.
+
 <div align="center">
 
 # 📁 tabby-better-sidebar

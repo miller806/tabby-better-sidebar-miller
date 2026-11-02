@@ -33,6 +33,7 @@ import { BaseTerminalTabComponent } from 'tabby-terminal'
 import { SidebarPlusSettingsTabComponent } from './settingsTab.component'
 import { SidebarPlusSftpComponent } from './sftpPanel.component'
 import { SnippetsModalComponent, SnippetsModalResult } from './snippetsModal.component'
+import { TagsModalComponent } from './tagsModal.component'
 import { NoteModalComponent } from './noteModal.component'
 import { PasteGroupModalComponent, PasteResolution } from './pasteGroupModal.component'
 import { TunnelsModalComponent } from './tunnelsModal.component'
@@ -770,6 +771,12 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
         // `.children` onto whatever it is handed, and that must never be a live
         // config.store object (piège #12).
         let groups = await readProfileGroups(this.profilesService, this.config)
+        if (this.config.store.sidebarPlus?.hideImportedSsh ?? true) {
+            groups = groups.filter(g => !(g.name === 'Imported from .ssh/config' && !g.editable))
+            for (const group of groups) {
+                group.profiles = group.profiles?.filter(p => !this.isHiddenImportedSsh(p))
+            }
+        }
 
         for (const group of groups) {
             if (group.profiles?.length) {
@@ -1360,8 +1367,11 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
         // `options.host`/`options.user` alongside the name: a server one only
         // remembers by address would otherwise be unreachable from here.
         // Absent on a non-SSH profile, which the search simply skips.
-        const searchable = profiles.filter(p => !p.isTemplate)
+        const searchable = profiles.filter(p => !p.isTemplate && !this.isHiddenImportedSsh(p))
         const matches = this.searchProfiles(searchable, q)
+        const matchedIds = new Set(matches.map(p => p.id))
+        matches.push(...searchable.filter(p => !matchedIds.has(p.id) &&
+            this.tagsFor(p.id).some(tag => tag.toLowerCase().includes(q))))
 
         // Notes are searched in a second pass rather than as one more key of
         // the fuzzy search, which would have meant grafting the text onto each
@@ -4741,6 +4751,41 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
             n++
         }
         return `${base} ${n}`
+    }
+
+    ////// PROFILE TAGS AND VISIBILITY //////
+    private isHiddenImportedSsh (profile: PartialProfile<Profile>): boolean {
+        return (this.config.store.sidebarPlus?.hideImportedSsh ?? true) &&
+            !!profile.isBuiltin && !!profile.id?.startsWith('openssh-config:')
+    }
+
+    tagsFor (id: string|undefined): string[] {
+        return id ? (this.config.store.sidebarPlus?.profileTags?.[id] ?? []) : []
+    }
+
+    async openTagsModal (): Promise<void> {
+        const profile = this.contextMenuProfile
+        this.closeContextMenu()
+        if (!profile?.id) {
+            return
+        }
+        const modal = this.ngbModal.open(TagsModalComponent)
+        modal.componentInstance.targetName = profile.name ?? ''
+        modal.componentInstance.text = this.tagsFor(profile.id).join(', ')
+        const text = await modal.result.catch(() => null) as string|null
+        if (text === null) {
+            return
+        }
+        const tags = [...new Set(text.split(/[,，\n]+/).map(tag => tag.trim()).filter(Boolean))]
+        const all = { ...(this.config.store.sidebarPlus.profileTags ?? {}) }
+        if (tags.length) {
+            all[profile.id] = tags
+        } else {
+            delete all[profile.id]
+        }
+        this.config.store.sidebarPlus.profileTags = all
+        await this.config.save()
+        await this.onFilterChange()
     }
 
     ////// NOTES //////

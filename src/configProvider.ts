@@ -118,6 +118,8 @@ export class SidebarPlusConfigProvider extends ConfigProvider {
         },
         sidebarPlus: {
             enabled: true,
+            hideImportedSsh: true,
+            profileTags: {} as Record<string, string[]>,
             favorites: [] as string[],
             favoriteGroups: [] as string[],
             recentIcons: [] as string[],

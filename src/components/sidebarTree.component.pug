@@ -418,6 +418,7 @@
                                 //- The full name, which `.no-wrap` or the
                                 //- two-line cap of wrapNames may cut short.
                                 span.ms-2.no-wrap.item-name([title]='profile.name') {{ profile.name }}
+                                span.profile-tag.ms-1(*ngFor='let tag of tagsFor(profile.id)', [title]='tag') {{ tag }}
                                 .fa.fa-fw.fas.fa-star.ms-1.favorite-badge(*ngIf='isFavorite(profile)')
                                 //- The whole point of a note is to be seen
                                 //- without being looked for. Static title, so
@@ -705,6 +706,9 @@
     a.group-context-menu-item(*ngIf='showNotes', (click)='openNoteModal()', href='#')
         .fa.fa-fw.fas.fa-note-sticky.me-2
         | {{ hasNote(contextMenuProfile.id) ? ('Edit the note...' | translate) : ('Add a note...' | translate) }}
+    a.group-context-menu-item((click)='openTagsModal()', href='#')
+        .fa.fa-fw.fas.fa-tags.me-2
+        | {{ 'Edit tags...' | translate }}
     a.group-context-menu-item((click)='toggleFavoriteFromMenu(contextMenuProfile, $event)', href='#')
         .fa.fa-fw.me-2(
             [class.fas]='isFavorite(contextMenuProfile)',
