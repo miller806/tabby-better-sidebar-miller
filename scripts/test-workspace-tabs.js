@@ -5,6 +5,42 @@ const vm = require('node:vm')
 const ts = require('typescript')
 const { Subject, Subscription } = require('rxjs')
 
+test('legacy folder exclusions override an incorrect restored workspace and survive another restart', () => {
+    const storage = { sidebarPlusActiveWorkspace: 'dev', sidebarPlusSessionOwners: JSON.stringify([{ key: 'server102', workspace: 'dev' }]) }
+    const setup = storage => {
+        const f = fixture(storage)
+        f.config.store.groups = [{ id: 'admin', parentGroupId: 'pro-folder' }, { id: 'pro-folder' }]
+        f.config.store.profiles = [{ id: 'server102', group: 'admin' }]
+        f.config.store.sidebarPlus.workspaces = [{ id: 'pro' }, { id: 'dev', hiddenGroupIds: ['pro-folder'] }, { id: 'private', hiddenGroupIds: ['pro-folder'] }]
+        f.app.ready$.next()
+        const tab = f.add({ profile: { id: 'server102' } }) // recovery can omit the group
+        f.app.tabOpened$.next(tab); f.service.sync()
+        return f
+    }
+    const first = setup(storage)
+    assert.equal(first.hidden(0), true)
+    first.service.setWorkspace('pro'); first.service.sync(); assert.equal(first.hidden(0), false)
+    first.interact(); first.service.sync()
+    assert.equal(JSON.parse(storage.sidebarPlusSessionOwners)[0].workspace, 'pro')
+    first.service.ngOnDestroy()
+    const second = setup({ ...storage }); assert.equal(second.hidden(0), true)
+    second.service.setWorkspace('pro'); second.service.sync(); assert.equal(second.hidden(0), false)
+    second.service.setWorkspace('all'); second.service.sync(); assert.equal(second.hidden(0), false)
+    second.service.ngOnDestroy()
+})
+
+test('legacy profile exclusions override learned ownership and follow configuration changes', () => {
+    const f = fixture(); f.app.ready$.next(); f.interact(); f.service.setWorkspace('dev')
+    const tab = f.add({ profile: { id: 'legacy' } }); f.app.tabOpened$.next(tab)
+    f.config.store.sidebarPlus.workspaces[1].hiddenProfileIds = ['legacy']
+    f.service.sync(); assert.equal(f.hidden(0), true)
+    f.service.setWorkspace('pro'); f.service.sync(); assert.equal(f.hidden(0), false)
+    f.config.store.sidebarPlus.workspaces[1].hiddenProfileIds = []
+    f.config.store.sidebarPlus.workspaces[0].hiddenProfileIds = ['legacy']
+    f.service.sync(); assert.equal(f.hidden(0), true)
+    f.service.ngOnDestroy()
+})
+
 function fixture (storage = { sidebarPlusActiveWorkspace: 'pro' }) {
     const exports = {}
     const observers = []

@@ -3,6 +3,12 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.20 (2026-11-02)
+
+- Resolve legacy workspace ownership from profile and ancestor-folder exclusions. A server visible only in pro now stays in pro even when an old session record assigns it to dev.
+- Resolve missing recovery group information from the saved profile, while preserving session ownership for shared profiles.
+- Add regression coverage for incorrect saved ownership, nested folders, repeated restart, and exclusion changes.
+
 ## 1.0.19 (2026-11-02)
 
 - Keep sessions that were recorded without a workspace unowned after a restart: a session opened while All was selected used to adopt the workspace selected at start on the next run.

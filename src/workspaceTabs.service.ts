@@ -148,7 +148,29 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 groupId = this.config.store.groups?.find((g: { id: string }) => g.id === groupId)?.parentGroupId
             }
         }
-        return undefined
+        // Older configurations express ownership by hiding a folder/profile in
+        // every other workspace. Use the same ancestor exclusions as the tree,
+        // before trusting a session's previously learned (possibly wrong) owner.
+        const inferred = this.panes(tab).map(pane => {
+            const sessionProfile = (pane as BaseTabComponent & { profile?: PartialProfile<Profile> }).profile
+            if (!sessionProfile) {
+                return undefined
+            }
+            const profile = (sessionProfile.id ? this.config.store.profiles?.find((p: Profile) => p.id === sessionProfile.id) : undefined) ?? sessionProfile
+            const ancestors = new Set<string>()
+            let groupId = profile.group
+            while (groupId && !ancestors.has(groupId)) {
+                ancestors.add(groupId)
+                groupId = this.config.store.groups?.find((g: { id: string }) => g.id === groupId)?.parentGroupId
+            }
+            const candidates = (sp?.workspaces ?? []).filter((workspace: {
+                id: string, hiddenProfileIds?: string[], hiddenGroupIds?: string[],
+            }) => !workspace.hiddenProfileIds?.includes(profile.id)
+                && !workspace.hiddenGroupIds?.some(id => ancestors.has(id)))
+            return candidates.length === 1 ? candidates[0].id as string : undefined
+        })
+        // A mixed split remains a single tab; do not infer ownership from one pane.
+        return inferred.length && inferred[0] && inferred.every(owner => owner === inferred[0]) ? inferred[0] : undefined
     }
 
     private visible (tab: BaseTabComponent): boolean {
