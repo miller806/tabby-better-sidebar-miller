@@ -9,7 +9,6 @@
 // rather than next to its own rules further down because the floating popups
 // (which come first in this file) reserve the same strip: nothing may sit on
 // top of the footer, the same rule the layout enforces for the content region.
-$sidebar-footer-height: 26px;
 
 sidebar-plus-tree {
     // A column of two flow members — the content region and the footer. The
@@ -104,14 +103,18 @@ sidebar-plus-tree .view-mode-bar {
 // `.tree-item`: that block is nested inside `.sidebar-plus-tree`, and this
 // section sits *above* it as a sibling, so none of it would apply.
 sidebar-plus-tree .active-sessions {
-    // Like .active-tunnels below: an item of the sidebar's flex column would
-    // otherwise default to `flex-shrink: 1` and be squeezed by the SFTP panel
-    // (`flex-grow-1`) sitting right under it — the box shrinks, its rows don't,
-    // and the overflow lands on top of the panel.
-    flex: 0 0 auto;
-    margin-bottom: .35rem;
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+    min-height: 24px;
+    max-height: 25%;
+    overflow: hidden;
+    margin-top: .35rem;
+    padding-top: .25rem;
+    border-top: 1px solid var(--theme-secondary);
 
     .active-sessions-header {
+        flex: 0 0 auto;
         display: flex;
         align-items: center;
         padding: .15rem .25rem;
@@ -140,15 +143,10 @@ sidebar-plus-tree .active-sessions {
         background-color: var(--theme-secondary);
     }
 
-    // Four rows visible, the rest on scroll. The block sits above the SFTP
-    // panel and is not compressible (`flex: 0 0 auto` above), so without a cap
-    // a dozen open sessions would squeeze the panel down to nothing in SFTP
-    // view. The cap is on this wrapper, not on .active-sessions, so the header
-    // and its counter stay visible while the list scrolls under them.
-    //
-    // 7rem = 4 × 1.75rem, the row height fixed just below. Both values move
-    // together — a row is .25rem of padding twice plus its 1.25rem line.
+    // The header stays fixed; longer lists scroll inside the bottom dock.
     .active-sessions-list {
+        flex: 0 1 auto;
+        min-height: 0;
         max-height: 7rem;
         overflow-y: auto;
     }
@@ -445,6 +443,8 @@ sidebar-plus-tree .active-sessions {
 }
 
 .sidebar-plus-tree {
+    flex: 1 1 0;
+    min-height: 0;
     max-height: 100%;
     overflow-y: scroll;
     scrollbar-width: none;
@@ -879,7 +879,7 @@ sidebar-plus-tree .grabber {
     padding: .5rem;
     border-radius: .3rem;
     // Bounded, and scrolls inside itself past that.
-    max-height: calc(100vh - #{$sidebar-footer-height} - 1.5rem);
+    max-height: calc(100vh - 1.5rem);
     overflow-y: auto;
     // Same reasoning as .group-context-menu above: --theme-bg, not the
     // sidebar's --theme-bg-more-2, so these floating popups stand out too.
@@ -1236,79 +1236,11 @@ sidebar-plus-tree .recent-profiles {
     }
 }
 
-// Footer bar at the very bottom of the sidebar, a flow member of the tag's
-// flex column (see the top of this file for why it is no longer absolute).
-$footer-height: $sidebar-footer-height;
-
-// The content region: everything except the footer. It takes all the height
-// the footer leaves, and clips what it cannot fit — rows can no longer slide
-// under the footer, they stop existing above it. min-height: 0 is what lets
-// a flex child actually shrink below its content size.
+// The full sidebar height belongs to the scrollable content and session dock.
 sidebar-plus-tree > .sidebar-plus-content {
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
-}
-
-sidebar-plus-tree .sidebar-plus-footer {
-    flex: 0 0 auto;
-    height: $footer-height;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 0 6px 0 10px;
-    // Opaque whatever the theme: a solid base under the themed tint. A
-    // vibrancy/rgba theme color alone would let the desktop (or anything
-    // else) show through — the user asked for none of that, on both views.
-    background-color: #000;
-    background-image: linear-gradient(var(--theme-bg-more-2), var(--theme-bg-more-2));
-    border-top: 1px solid var(--theme-secondary);
-
-    .sidebar-plus-footer-brand {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-size: 11px;
-        color: var(--theme-fg, inherit);
-        opacity: 0.55;
-
-        // The two links inherit the footer's own muted colour rather than the
-        // theme's link colour: this is a signature line, not a call to action.
-        // They only announce themselves on hover.
-        .footer-name,
-        .footer-by-author {
-            color: inherit;
-            text-decoration: none;
-
-            &:hover {
-                color: inherit;
-                text-decoration: underline;
-            }
-        }
-
-        .footer-name { font-weight: 600; }
-        .footer-by { opacity: 0.85; }
-        .footer-by-author { opacity: 0.85; }
-        .footer-version { margin-left: 4px; opacity: 0.85; }
-    }
-
-    // Now lives in the footer flow, no longer absolute. Enlarged from 14px on
-    // the user's call; translucent at rest, full on hover.
-    .sidebar-plus-gear {
-        flex: 0 0 auto;
-        font-size: 17px;
-        line-height: 1;
-        padding: 2px;
-        color: inherit;
-        opacity: 0.55;
-        text-decoration: none;
-
-        &:hover {
-            opacity: 1;
-            color: inherit;
-        }
-    }
 }
 
 // Long names on two lines instead of one ellipsis (#10, `wrapNames`, off by
@@ -1341,17 +1273,80 @@ sidebar-plus-tree.sidebar-plus-wrap-names.sidebar-plus-wrap-unlimited .item-name
     overflow: visible;
 }
 
-.profile-tag {
-    display: inline-block;
+// Compact profile rows: name has priority, tags form a small rail on the right.
+sidebar-plus-tree .tree-item[data-profile-row] {
+    container-type: inline-size;
+    box-sizing: border-box;
+    min-height: 26px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-right: 6px;
+    gap: 5px;
+    line-height: 20px;
+
+    .profile-name {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        -webkit-line-clamp: unset;
+    }
+
+    .status-dot {
+        flex: 0 0 6px;
+        width: 6px;
+        height: 6px;
+        margin: 0;
+    }
+
+    .profile-custom-icon {
+        flex: 0 0 13px;
+        width: 13px;
+        height: 13px;
+        font-size: 12px;
+    }
+}
+
+sidebar-plus-tree .tree-item[data-group-id] {
+    min-height: 26px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+
+    .fw-20 {
+        flex: 0 0 16px;
+        width: 16px;
+    }
+}
+
+.profile-tags {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
     flex: 0 1 auto;
-    max-width: 90px;
+    min-width: 0;
+    max-width: 55%;
+    gap: 4px;
+    margin-left: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    white-space: nowrap;
+}
+
+.profile-tag {
+    display: block;
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: none;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding: 1px 5px;
-    border: 1px solid currentColor;
-    border-radius: 4px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: 3px;
     font-size: 10px;
-    line-height: 15px;
-    background-color: rgba(128, 128, 128, .12);
+    font-weight: 500;
+    line-height: 17px;
 }

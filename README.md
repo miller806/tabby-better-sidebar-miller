@@ -4,6 +4,16 @@ Personal fork of [TooMuhtsh/tabby-better-sidebar](https://github.com/TooMuhtsh/t
 
 ## Miller additions
 
+- The sidebar branding/version footer is removed to give the list and session dock more room; plugin settings remain available in Tabby Settings.
+
+- Active sessions are docked at the bottom of the sidebar, beneath the independently scrolling profiles/SFTP area. The dock is collapsible, capped to a quarter of the sidebar, and scrolls internally for longer lists. When workspace terminal switching is enabled, the list and its count follow the selected workspace; All and disabling the switch show every active session.
+
+- **Terminal tab tags (optional, off by default):** enable **Settings → Better Sidebar → General → Show tags on terminal tabs** to display all server tags alongside native terminal titles. Split tabs show the unique tags from all their panes. Tag display is independent of workspace tab switching.
+
+- Compact single-line server rows: smaller indentation, status dots instead of default computer icons, and soft colored tags aligned to the right. All tags are rendered without count folding. When space is limited, scroll the tag rail horizontally; hover to see the full tag list. Custom profile icons are retained. Profile rows stay on one line even when folder name wrapping is enabled.
+
+- **Workspace terminal tabs (optional, off by default):** turn on **Settings → Better Sidebar → Features → Workspaces → Switch terminal tabs with workspace**. Only the selected workspace terminal headers are shown; hidden sessions stay connected and remain registered with Tabby for recovery and shutdown. All, disabling this option, disabling workspaces or disabling the plugin restores every header. Settings and other tool tabs stay shared. A split tab belongs to one workspace as a whole; mixed-workspace panes are not separated. Terminal tabs use their profile/folder ownership when available, otherwise the workspace where they were opened. Existing unassigned tabs are assigned to the selected workspace when the plugin starts. Associations for shared profiles are per running Tabby window and are inferred again after restarting.
+
 - Tags get stable, varied colors automatically.
 - Drag workspace tabs or dropdown entries to reorder them. All stays fixed.
 - Folders, profiles and duplicated profiles created through this sidebar belong to the selected workspace. Other workspaces do not show or search them; All shows everything. Existing entries and entries created in All remain shared. Removing a workspace makes its entries shared again.

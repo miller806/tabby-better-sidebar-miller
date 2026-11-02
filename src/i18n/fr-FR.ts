@@ -19,6 +19,12 @@
  * zero change).
  */
 const fr_FR: Record<string, string> = {
+    "Show tags on terminal tabs": "Afficher les étiquettes sur les onglets",
+    "Display all server tags beside terminal tab titles.": "Afficher toutes les étiquettes du serveur près du titre.",
+
+    "Switch terminal tabs with workspace": "Changer les onglets avec l’espace de travail",
+    "Show only this workspace terminal tabs while keeping connections running.": "Afficher les terminaux de cet espace en gardant les connexions actives.",
+
     "Tags: {name}": "Étiquettes : {name}",
     "Separate tags with commas or new lines. Clear to remove all tags.": "Séparez les étiquettes par des virgules ou des retours à la ligne. Videz pour tout retirer.",
     "Edit tags...": "Modifier les étiquettes…",
@@ -394,7 +400,6 @@ const fr_FR: Record<string, string> = {
     'Delete the workspace': 'Supprimer le workspace',
     'Delete "{name}"? Hidden profiles and folders become visible everywhere else. This action is irreversible.':
         'Supprimer « {name} » ? Les profils et dossiers masqués redeviennent visibles partout ailleurs. Cette action est irréversible.',
-    'Better Sidebar settings': 'Réglages de Better Sidebar',
 
     // sidebarTree.component.ts — snippets notices, workspaces, pinned group
     'Variables to fill in on "{name}"': 'Variables à renseigner sur « {name} »',
@@ -633,8 +638,6 @@ const fr_FR: Record<string, string> = {
     'Every block below can be switched off; the sidebar itself can too.': 'Chaque bloc ci-dessous peut être désactivé ; la sidebar elle-même aussi.',
 
     // sidebarTree.component.pug — liens sortants du pied de page
-    'Open the project repository': 'Ouvrir le dépôt du projet',
-    'Open the author profile on GitHub': 'Ouvrir le profil de l\'auteur sur GitHub',
 
     // Toasts, dialogs and captions that used to be hard-coded in French —    // sftpRemoteEdit.ts, sftpDragOut.ts, transfers.ts, dragOutServer.service.ts,    // editorLauncher.service.ts, mount.service.ts / hostCompat.ts, hotkeys.ts,    // snippets.service.ts, sftpBrowser.component.pug (preparing marker).
     'Could not download {path}': 'Impossible de télécharger {path}',

@@ -5,6 +5,12 @@
  * Formal register throughout ("Sie"), matching the project's chosen tone.
  */
 const de_DE: Record<string, string> = {
+    "Show tags on terminal tabs": "Tags in Terminal-Tabs anzeigen",
+    "Display all server tags beside terminal tab titles.": "Alle Server-Tags neben den Titeln der Terminal-Tabs anzeigen.",
+
+    "Switch terminal tabs with workspace": "Terminal-Tabs mit Arbeitsbereich wechseln",
+    "Show only this workspace terminal tabs while keeping connections running.": "Nur Terminals dieses Arbeitsbereichs anzeigen und Verbindungen offen halten.",
+
     "Tags: {name}": "Tags: {name}",
     "Separate tags with commas or new lines. Clear to remove all tags.": "Tags durch Kommas oder Zeilenumbrüche trennen. Leeren entfernt alle Tags.",
     "Edit tags...": "Tags bearbeiten…",
@@ -364,7 +370,6 @@ const de_DE: Record<string, string> = {
     'Delete the workspace': 'Arbeitsbereich löschen',
     'Delete "{name}"? Hidden profiles and folders become visible everywhere else. This action is irreversible.':
         '„{name}“ löschen? Ausgeblendete Profile und Ordner werden überall sonst wieder sichtbar. Diese Aktion ist unwiderruflich.',
-    'Better Sidebar settings': 'Better-Sidebar-Einstellungen',
 
     // sidebarTree.component.ts — snippets notices, workspaces, pinned group
     'Variables to fill in on "{name}"': 'Auszufüllende Variablen bei „{name}“',
@@ -603,8 +608,6 @@ const de_DE: Record<string, string> = {
     'Every block below can be switched off; the sidebar itself can too.': 'Jeder Block unten lässt sich abschalten, die Seitenleiste selbst ebenfalls.',
 
     // sidebarTree.component.pug — ausgehende Links in der Fußzeile
-    'Open the project repository': 'Projekt-Repository öffnen',
-    'Open the author profile on GitHub': 'Autorenprofil auf GitHub öffnen',
 
     // Toasts, dialogs and captions that used to be hard-coded in French —    // sftpRemoteEdit.ts, sftpDragOut.ts, transfers.ts, dragOutServer.service.ts,    // editorLauncher.service.ts, mount.service.ts / hostCompat.ts, hotkeys.ts,    // snippets.service.ts, sftpBrowser.component.pug (preparing marker).
     'Could not download {path}': '{path} konnte nicht heruntergeladen werden',

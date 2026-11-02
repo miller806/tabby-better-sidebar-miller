@@ -1,7 +1,5 @@
+import { profileTagColor, profileTagBackground } from '../profileTags'
 import './sidebarTree.component.scss'
-// Shown in the footer bar. Imported from package.json (resolveJsonModule) so it
-// tracks the real version at every bump rather than a hand-kept copy.
-import { version as PLUGIN_VERSION } from '../../package.json'
 import FuzzySearch from 'fuzzy-search'
 import { merge, Subscription, timer } from 'rxjs'
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop'
@@ -30,6 +28,7 @@ import {
 } from 'tabby-core'
 import { SettingsTabComponent } from 'tabby-settings'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
+import { SidebarPlusWorkspaceTabsService } from '../workspaceTabs.service'
 import { SidebarPlusSettingsTabComponent } from './settingsTab.component'
 import { SidebarPlusSftpComponent } from './sftpPanel.component'
 import { SnippetsModalComponent, SnippetsModalResult } from './snippetsModal.component'
@@ -167,11 +166,6 @@ interface ActiveSession {
     template: require('./sidebarTree.component.pug'),
 })
 export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChecked {
-    /** Shown in the footer bar next to the plugin name. */
-    readonly pluginVersion = PLUGIN_VERSION
-    /** Footer links. Constants rather than template literals: the template must not compute (piège #54). */
-    readonly repositoryUrl = 'https://github.com/TooMuhtsh/tabby-better-sidebar'
-    readonly authorUrl = 'https://github.com/TooMuhtsh?tab=repositories'
     profileGroups: PartialProfileGroup<ProfileGroup>[] = []
     /** What the template renders: `baseRootGroups`, narrowed to the open profiles while the "Actifs" tab is on — see setRootGroups(). */
     rootGroups: PartialProfileGroup<ProfileGroup>[] = []
@@ -291,6 +285,10 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
      * lose track of it.
      */
     activeSessions: ActiveSession[] = []
+
+    get visibleActiveSessions (): ActiveSession[] {
+        return this.activeSessions.filter(session => this.workspaceTabs.isSessionVisible(session.tab))
+    }
     /** tab → when it was first seen live, the only record of a session's age there is (see sessionUptime()). */
     private sessionOpenedAt = new Map<SSHTabComponent, number>()
     /** The row under the pointer and the tooltip text held still for it — see sessionTooltip(). */
@@ -505,6 +503,7 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
         private config: ConfigService,
         private profilesService: ProfilesService,
         private app: AppService,
+        private workspaceTabs: SidebarPlusWorkspaceTabsService,
         private tabsService: TabsService,
         private notifications: NotificationsService,
         private ngbModal: NgbModal,
@@ -881,6 +880,7 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
 
         this.workspaces = workspaces
         this.activeWorkspaceId = activeWorkspaceId
+        this.workspaceTabs.setWorkspace(activeWorkspaceId)
         // Persisted only while the workspaces block is on. With it off, the
         // active workspace is forced to "Tous" for display, and writing that
         // here would erase the user's real selection — a switch must never
@@ -1464,6 +1464,7 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
     }
 
     selectWorkspace (id: string): void {
+        this.workspaceTabs.setWorkspace(id)
         this.activeWorkspaceId = id
         window.localStorage.sidebarPlusActiveWorkspace = id
         this.showHiddenPanel = false
@@ -4846,14 +4847,8 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
         return true
     }
 
-    tagColor (tag: string): string {
-        // A stable hash gives arbitrary labels a varied color without changing on refresh.
-        let hash = 0
-        for (const char of tag) {
-            hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0
-        }
-        return `hsl(${((hash % 360) + 360) % 360}, 72%, 72%)`
-    }
+    tagBackground = profileTagBackground
+    tagColor = profileTagColor
 
     ////// PROFILE TAGS AND VISIBILITY //////
     private isHiddenImportedSsh (profile: PartialProfile<Profile>): boolean {

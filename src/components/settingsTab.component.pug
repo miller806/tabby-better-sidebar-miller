@@ -48,6 +48,14 @@
       .feature-card
         .form-line.block-switch
           .header
+            .title {{ 'Show tags on terminal tabs' | translate }}
+            .description {{ 'Display all server tags beside terminal tab titles.' | translate }}
+          .control
+            toggle([ngModel]='terminalTabTagsEnabled', (ngModelChange)="setBlock('showTerminalTabTags', $event)")
+
+      .feature-card
+        .form-line.block-switch
+          .header
             .title {{ 'Hide imported SSH folder' | translate }}
             .description {{ 'Hide connections imported from .ssh/config in the sidebar.' | translate }}
           .control
@@ -142,6 +150,13 @@
               (ngModelChange)="setBlock('showWorkspaces', $event)"
             )
         .feature-card-body(*ngIf="blockOn('showWorkspaces')")
+          .form-line
+            .header
+              .title {{ 'Switch terminal tabs with workspace' | translate }}
+              .description {{ 'Show only this workspace terminal tabs while keeping connections running.' | translate }}
+            .control
+              toggle([ngModel]="workspaceTabsEnabled", (ngModelChange)="setBlock('workspaceTabs', $event)")
+
           .form-line
             .header
               .title {{ lblPresentation }} #[i.fas.fa-info-circle.info-hint([title]='lblPresentationHint')]

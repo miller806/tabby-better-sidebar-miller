@@ -20,6 +20,7 @@ import { SidebarPlusSettingsTabComponent } from './components/settingsTab.compon
 import { SidebarPlusTransfersComponent } from './components/transfers.component'
 import { SidebarPlusConfigProvider } from './configProvider'
 import { SidebarPlusSettingsTabProvider } from './settings'
+import { SidebarPlusWorkspaceTabsService } from './workspaceTabs.service'
 import { SidebarPlusMountService } from './mount.service'
 import { SidebarPlusHotkeyProvider, SidebarPlusHotkeyService } from './hotkeys'
 import { SidebarPlusTempFilesService } from './tempFiles.service'
@@ -78,11 +79,13 @@ export default class SidebarPlusModule {
     // which is exactly never for a session that leaves stale copies behind.
     constructor (
         mount: SidebarPlusMountService,
+        workspaceTabs: SidebarPlusWorkspaceTabsService,
         hotkeys: SidebarPlusHotkeyService,
         temp: SidebarPlusTempFilesService,
         i18n: SidebarPlusI18nService,
     ) {
         void mount
+        void workspaceTabs
         void hotkeys
         void temp
         // Subscription only — nothing that can block Tabby's startup path.

@@ -351,6 +351,14 @@ export class SidebarPlusSettingsTabComponent {
      * the block owns. `requires` is the precondition id of hostCompat.ts, absent
      * for blocks that depend on nothing beyond the plugin itself.
      */
+    get terminalTabTagsEnabled (): boolean {
+        return this.config.store.sidebarPlus?.showTerminalTabTags ?? false
+    }
+
+    get workspaceTabsEnabled (): boolean {
+        return this.config.store.sidebarPlus?.workspaceTabs ?? false
+    }
+
     blockOn (key: string, requires?: string): boolean {
         return (this.config.store.sidebarPlus?.[key] ?? true) && this.hostHas(requires)
     }

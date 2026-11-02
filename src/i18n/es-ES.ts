@@ -5,6 +5,12 @@
  * Formal register throughout (no "tú"), matching the project's chosen tone.
  */
 const es_ES: Record<string, string> = {
+    "Show tags on terminal tabs": "Mostrar etiquetas en las pestañas",
+    "Display all server tags beside terminal tab titles.": "Mostrar todas las etiquetas del servidor junto al título.",
+
+    "Switch terminal tabs with workspace": "Cambiar pestañas con el espacio de trabajo",
+    "Show only this workspace terminal tabs while keeping connections running.": "Mostrar los terminales de este espacio y mantener las conexiones activas.",
+
     "Tags: {name}": "Etiquetas: {name}",
     "Separate tags with commas or new lines. Clear to remove all tags.": "Separa las etiquetas con comas o saltos de línea. Borra todo para quitarlas.",
     "Edit tags...": "Editar etiquetas…",
@@ -365,7 +371,6 @@ const es_ES: Record<string, string> = {
     'Delete the workspace': 'Eliminar el espacio de trabajo',
     'Delete "{name}"? Hidden profiles and folders become visible everywhere else. This action is irreversible.':
         '¿Eliminar «{name}»? Los perfiles y carpetas ocultos vuelven a ser visibles en el resto. Esta acción es irreversible.',
-    'Better Sidebar settings': 'Ajustes de Better Sidebar',
 
     // sidebarTree.component.ts — snippets notices, workspaces, pinned group
     'Variables to fill in on "{name}"': 'Variables por rellenar en «{name}»',
@@ -604,8 +609,6 @@ const es_ES: Record<string, string> = {
     'Every block below can be switched off; the sidebar itself can too.': 'Cada bloque siguiente se puede desactivar; la barra lateral también.',
 
     // sidebarTree.component.pug — enlaces salientes del pie de página
-    'Open the project repository': 'Abrir el repositorio del proyecto',
-    'Open the author profile on GitHub': 'Abrir el perfil del autor en GitHub',
 
     // Toasts, dialogs and captions that used to be hard-coded in French —    // sftpRemoteEdit.ts, sftpDragOut.ts, transfers.ts, dragOutServer.service.ts,    // editorLauncher.service.ts, mount.service.ts / hostCompat.ts, hotkeys.ts,    // snippets.service.ts, sftpBrowser.component.pug (preparing marker).
     'Could not download {path}': 'No se pudo descargar {path}',

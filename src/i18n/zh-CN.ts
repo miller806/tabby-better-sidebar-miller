@@ -5,6 +5,12 @@
  * Plurals only carry the `other` category: Chinese has no grammatical number.
  */
 const zh_CN: Record<string, string> = {
+    "Show tags on terminal tabs": "在终端标签页显示标签",
+    "Display all server tags beside terminal tab titles.": "在终端标签页标题旁显示全部服务器标签。",
+
+    "Switch terminal tabs with workspace": "标签页跟随工作区切换",
+    "Show only this workspace terminal tabs while keeping connections running.": "仅显示当前工作区的终端标签页，隐藏的连接继续运行。",
+
     "Tags: {name}": "标签：{name}",
     "Separate tags with commas or new lines. Clear to remove all tags.": "用逗号或换行分隔标签，清空即可移除全部标签。",
     "Edit tags...": "编辑标签…",
@@ -361,7 +367,6 @@ const zh_CN: Record<string, string> = {
     'Delete the workspace': '删除工作区',
     'Delete "{name}"? Hidden profiles and folders become visible everywhere else. This action is irreversible.':
         '删除“{name}”？隐藏的配置和文件夹将在其它工作区中重新可见。此操作不可撤销。',
-    'Better Sidebar settings': '侧边栏+ 设置',
 
     // sidebarTree.component.ts — snippets notices, workspaces, pinned group
     'Variables to fill in on "{name}"': '“{name}”上待填写的变量',
@@ -600,8 +605,6 @@ const zh_CN: Record<string, string> = {
     'Every block below can be switched off; the sidebar itself can too.': '下面的每个区块都可以关闭；侧边栏本身也可以。',
 
     // sidebarTree.component.pug — outbound links in the footer
-    'Open the project repository': '打开项目仓库',
-    'Open the author profile on GitHub': '在 GitHub 上打开作者主页',
 
     // Toasts, dialogs and captions that used to be hard-coded in French —
     // sftpRemoteEdit.ts, sftpDragOut.ts, transfers.ts, dragOutServer.service.ts,

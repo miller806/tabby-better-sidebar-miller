@@ -233,6 +233,8 @@ export class SidebarPlusConfigProvider extends ConfigProvider {
             showSftp: true,
             showTransfers: true,
             showWorkspaces: true,
+            workspaceTabs: false,
+            showTerminalTabTags: false,
             // How `.workspace-bar` itself is shown once showWorkspaces is on:
             // 'tabs' is the original flex-wrap strip (wraps onto more rows as
             // workspaces pile up); 'dropdown' swaps it for a single-line

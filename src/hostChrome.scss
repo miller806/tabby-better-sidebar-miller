@@ -40,3 +40,32 @@ body:has(sidebar-plus-tree.sidebar-plus-mac-inset:not([hidden])) .tab-bar > .ins
     display: none;
 }
 
+
+// Keep native tabs registered and connected while filtering workspace headers.
+tab-header.sidebar-plus-workspace-tab-hidden {
+    display: none !important;
+}
+
+// Native terminal headers share the same small, soft tags as profile rows.
+tab-header .sidebar-plus-terminal-tags {
+    display: flex;
+    align-items: center;
+    flex: 0 1 auto;
+    gap: 4px;
+    min-width: 0;
+    max-width: 55%;
+    margin-left: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    -webkit-app-region: no-drag;
+}
+
+tab-header .sidebar-plus-terminal-tag {
+    flex: 0 0 auto;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: 10px;
+    line-height: 17px;
+    white-space: nowrap;
+}
