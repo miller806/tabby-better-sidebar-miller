@@ -109,21 +109,57 @@ test('a shared profile opened while All is selected is never tied to a workspace
 
 test('a session returns to the workspace it was opened in after a restart', () => {
     const storage = { sidebarPlusActiveWorkspace: 'pro' }
-    const first = fixture(storage); first.app.ready$.next()
+    const first = fixture(storage); first.app.ready$.next(); first.interact()
     const tab = first.add({ profile: { id: 'shared' } }); first.app.tabOpened$.next(tab); first.service.sync()
     first.service.setWorkspace('dev'); first.service.sync(); assert.equal(first.hidden(0), true)
     first.service.ngOnDestroy()
 
-    const second = fixture(storage); second.app.ready$.next()
+    // Reopened while dev is selected: the session still belongs to pro.
+    const second = fixture({ ...storage, sidebarPlusActiveWorkspace: 'dev' }); second.app.ready$.next()
     second.add({ profile: { id: 'shared' } }); second.service.sync()
-    assert.equal(second.hidden(0), false)
-    second.service.setWorkspace('dev'); second.service.sync(); assert.equal(second.hidden(0), true)
+    assert.equal(second.hidden(0), true)
+    second.service.setWorkspace('pro'); second.service.sync(); assert.equal(second.hidden(0), false)
+    second.service.ngOnDestroy()
+})
+
+test('two sessions of the same profile keep their own workspace across a restart', () => {
+    const storage = { sidebarPlusActiveWorkspace: 'pro' }
+    const first = fixture(storage); first.app.ready$.next(); first.interact()
+    const pro = first.add({ profile: { id: 'local' } }); first.app.tabOpened$.next(pro); first.service.sync()
+    first.service.setWorkspace('dev'); first.service.sync()
+    const dev = first.add({ profile: { id: 'local' } }); first.app.tabOpened$.next(dev); first.service.sync()
+    assert.equal(JSON.parse(first.storage.sidebarPlusSessionOwners).length, 2)
+    first.service.ngOnDestroy()
+
+    const second = fixture({ ...storage }); second.app.ready$.next()
+    const restoredPro = second.add({ profile: { id: 'local' } }); second.app.tabOpened$.next(restoredPro)
+    const restoredDev = second.add({ profile: { id: 'local' } }); second.app.tabOpened$.next(restoredDev); second.service.sync()
+    assert.equal(second.hidden(0), false); assert.equal(second.hidden(1), true)
+    second.service.setWorkspace('dev'); second.service.sync()
+    assert.equal(second.hidden(0), true); assert.equal(second.hidden(1), false)
+    second.service.ngOnDestroy()
+})
+
+test('a session whose profile has no id keeps its workspace by position', () => {
+    const storage = { sidebarPlusActiveWorkspace: 'pro' }
+    const first = fixture(storage); first.app.ready$.next(); first.interact()
+    const a = first.add({ profile: {} }); first.app.tabOpened$.next(a); first.service.sync()
+    first.service.setWorkspace('dev'); first.service.sync()
+    const b = first.add({ profile: {} }); first.app.tabOpened$.next(b); first.service.sync()
+    first.service.ngOnDestroy()
+
+    const second = fixture({ ...storage }); second.app.ready$.next()
+    const r1 = second.add({ profile: {} }); second.app.tabOpened$.next(r1)
+    const r2 = second.add({ profile: {} }); second.app.tabOpened$.next(r2); second.service.sync()
+    assert.equal(second.hidden(0), false); assert.equal(second.hidden(1), true)
+    second.service.setWorkspace('dev'); second.service.sync()
+    assert.equal(second.hidden(0), true); assert.equal(second.hidden(1), false)
     second.service.ngOnDestroy()
 })
 
 test('a restored session keeps its workspace instead of adopting the selected one', () => {
     const storage = { sidebarPlusActiveWorkspace: 'pro' }
-    const first = fixture(storage); first.app.ready$.next()
+    const first = fixture(storage); first.app.ready$.next(); first.interact()
     const tab = first.add({ profile: { id: 'shared' } }); first.app.tabOpened$.next(tab); first.service.sync()
     first.service.ngOnDestroy()
 

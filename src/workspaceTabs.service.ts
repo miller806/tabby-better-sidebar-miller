@@ -12,8 +12,16 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     private workspaceId = window.localStorage.sidebarPlusActiveWorkspace ?? 'all'
     /** Workspace each tab was opened in: the fallback when its profile or folder claims none. */
     private owners = new WeakMap<BaseTabComponent, string>()
-    /** Last written session → workspace map, kept in localStorage across restarts. */
-    private ownerStore?: Record<string, string>
+    /**
+     * Session → workspace records from the last run, in tab order. Keyed by the
+     * profiles behind a tab, which is all that survives recovery: two sessions of the
+     * same profile are told apart by their position, never by the profile alone.
+     */
+    private saved?: { key: string, workspace: string }[]
+    private restoreCursor = 0
+    private restoreDrifted = false
+    private restoreAttempted = new WeakSet<BaseTabComponent>()
+    private written?: string
     private lastActive = new Map<string, BaseTabComponent>()
     private subscription = new Subscription()
     private observer?: MutationObserver
@@ -72,6 +80,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             }))
             this.subscription.add(this.config.changed$.subscribe(() => { this.visibilityRevision++; this.schedule() }))
             this.listenForInteraction()
+            this.listenForShutdown()
             this.schedule()
         }))
     }
@@ -172,36 +181,38 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 this.owners.delete(tab)
                 return undefined
             }
-            // The profile can be attached after the tab opens: store it once the key exists.
-            this.remember(tab, learned)
             return learned
         }
-        const stored = this.storedOwner(tab)
-        if (stored) {
-            this.owners.set(tab, stored)
+        if (this.interacted) {
+            return undefined
         }
-        return stored
+        const restored = this.takeRestored(tab)
+        if (restored) {
+            this.owners.set(tab, restored)
+        }
+        return restored
     }
 
     /**
      * A tab the user opens belongs to the workspace they are in, unless its profile
-     * or folder already says otherwise, and the association is persisted so that the
-     * same session comes back to the same workspace after a restart.
-     *
-     * Recovery reopens the previous sessions before the user can interact with the
-     * window. Those tabs keep the workspace recorded for them instead of adopting
-     * whichever workspace happens to be selected.
+     * or folder already says otherwise; the association is stored so that the same
+     * session comes back to the same workspace after a restart.
      */
     private claimOpened (tab: BaseTabComponent): void {
+        if (!this.enabled() || this.profileOwner(tab)) {
+            return
+        }
+        if (!this.interacted) {
+            const restored = this.takeRestored(tab)
+            if (restored) {
+                this.owners.set(tab, restored)
+                return
+            }
+        }
         const workspace = this.currentWorkspace()
-        if (!this.enabled() || workspace === 'all' || this.profileOwner(tab)) {
-            return
+        if (workspace !== 'all') {
+            this.owners.set(tab, workspace)
         }
-        if (!this.interacted && this.storedOwner(tab)) {
-            return
-        }
-        this.owners.set(tab, workspace)
-        this.remember(tab, workspace)
     }
 
     /** Recovery ends when the user first touches the window: that is a user-opened tab. */
@@ -221,6 +232,18 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         document.removeEventListener('keydown', this.markInteracted, true)
     }
 
+    /** A restored session closed before its profile is ready would otherwise leave no record. */
+    private listenForShutdown (): void {
+        if (typeof window.addEventListener !== 'function') {
+            return
+        }
+        this.zone.runOutsideAngular(() => window.addEventListener('beforeunload', this.flushOwners))
+    }
+
+    private flushOwners = (): void => {
+        this.writeOwners()
+    }
+
     private hasProfile (tab: BaseTabComponent): boolean {
         return this.panes(tab).some(pane => !!(pane as BaseTabComponent & { profile?: unknown }).profile)
     }
@@ -237,37 +260,77 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         return ids.length ? ids.join('+') : undefined
     }
 
-    private storedOwner (tab: BaseTabComponent): string|undefined {
+    /**
+     * The workspace recorded for this session on the previous run. Tabby recovers the
+     * saved tabs in the order they had, so position tells apart the sessions that
+     * share a profile, and a tab that failed to recover only shifts the cursor until
+     * the next matching key. Sessions whose pane has no profile id are matched by
+     * position alone, which is why they are only ever taken in order.
+     */
+    private takeRestored (tab: BaseTabComponent): string|undefined {
+        if (this.restoreAttempted.has(tab)) {
+            return undefined
+        }
         const key = this.sessionKey(tab)
-        const owner = key ? this.storedOwners()[key] : undefined
-        return owner && this.workspaceExists(owner) ? owner : undefined
-    }
-
-    private storedOwners (): Record<string, string> {
-        if (!this.ownerStore) {
-            let parsed: unknown
-            try {
-                parsed = JSON.parse(window.localStorage.sidebarPlusSessionOwners ?? '{}')
-            } catch {
-                parsed = {}
+        const saved = this.savedOwners()
+        const entry = saved[this.restoreCursor]
+        if (entry && entry.key === (key ?? '')) {
+            this.restoreAttempted.add(tab)
+            this.restoreCursor++
+            return entry.workspace && this.workspaceExists(entry.workspace) ? entry.workspace : undefined
+        }
+        if (!key) {
+            // Recovery attaches the profile after the tab opens: try again on the next pass.
+            return undefined
+        }
+        this.restoreAttempted.add(tab)
+        if (this.restoreDrifted) {
+            return undefined
+        }
+        // A tab that failed to recover, or one opened before this version: resynchronise
+        // on the next entry carrying the same profile and stop trusting positions.
+        for (let index = this.restoreCursor; index < saved.length; index++) {
+            if (saved[index].key === key) {
+                this.restoreCursor = index + 1
+                this.restoreDrifted = true
+                const workspace = saved[index].workspace
+                return workspace && this.workspaceExists(workspace) ? workspace : undefined
             }
-            this.ownerStore = parsed && typeof parsed === 'object' ? parsed as Record<string, string> : {}
         }
-        return this.ownerStore
+        return undefined
     }
 
-    private remember (tab: BaseTabComponent, workspace: string): void {
-        const key = this.sessionKey(tab)
-        if (!key || workspace === 'all') {
+    private savedOwners (): { key: string, workspace: string }[] {
+        if (!this.saved) {
+            this.saved = []
+            try {
+                const parsed = JSON.parse(window.localStorage.sidebarPlusSessionOwners ?? '[]')
+                if (Array.isArray(parsed)) {
+                    this.saved = parsed
+                        .filter(entry => entry && typeof entry.key === 'string' && typeof entry.workspace === 'string')
+                        .map(entry => ({ key: entry.key, workspace: entry.workspace }))
+                }
+            } catch {
+                // Unreadable, or written by an older version: start over, sessions stay reachable.
+            }
+        }
+        return this.saved
+    }
+
+    /** Records where every open tab belongs, in tab order, for the next start. */
+    private writeOwners (): void {
+        if (!this.enabled()) {
             return
         }
-        const store = this.storedOwners()
-        if (store[key] === workspace) {
+        const entries = this.app.tabs.map(tab => ({ key: this.sessionKey(tab) ?? '', workspace: this.owner(tab) ?? '' }))
+        const serialized = JSON.stringify(entries)
+        if (serialized === this.written) {
             return
         }
-        store[key] = workspace
+        this.written = serialized
+        this.saved = entries
         try {
-            window.localStorage.sidebarPlusSessionOwners = JSON.stringify(store)
+            window.localStorage.sidebarPlusSessionOwners = serialized
         } catch {
             // A full or disabled localStorage costs the association, never the session.
         }
@@ -438,6 +501,11 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         const headers = Array.from(document.querySelectorAll<HTMLElement>('.tab-bar > .tabs > tab-header:not(.cdk-drag-preview)'))
         this.watchHeaderStrip(headers)
         this.applied = this.needsHeaders()
+        if (this.interacted) {
+            // Records where each session belongs for the next start; see takeRestored().
+            // Written before the header checks below, which may bail out on a transient DOM mismatch.
+            this.writeOwners()
+        }
         // Native open/close animations can temporarily leave a different number of headers.
         // Never assign tags by index until the DOM and app.tabs agree again.
         if (headers.length !== this.app.tabs.length) {
@@ -499,6 +567,9 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         if (typeof document.removeEventListener === 'function') {
             document.removeEventListener('pointerdown', this.markInteracted, true)
             document.removeEventListener('keydown', this.markInteracted, true)
+        }
+        if (typeof window.removeEventListener === 'function') {
+            window.removeEventListener('beforeunload', this.flushOwners)
         }
         if (this.pending !== undefined) {
             clearTimeout(this.pending)

@@ -3,6 +3,12 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.18 (2026-11-02)
+
+- Record the workspace per session instead of per profile. Sessions of the same profile (or several local shells sharing one profile) no longer collapse onto a single workspace after a restart: the record is an ordered list matching the tab order, and recovery reopens tabs in that order.
+- Match sessions whose panes have no profile id by position, so they are restored too, and resynchronise when a saved tab fails to recover.
+- Write the record when the window is closed as well, so a session restored without any interaction still keeps its workspace.
+
 ## 1.0.17 (2026-11-02)
 
 - Keep terminal tabs with their workspace across restarts: the workspace a session was opened in is now stored per machine and reapplied before the sidebar decides what to show.
