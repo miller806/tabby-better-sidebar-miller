@@ -4,6 +4,10 @@ Personal fork of [TooMuhtsh/tabby-better-sidebar](https://github.com/TooMuhtsh/t
 
 ## Miller additions
 
+- Tags get stable, varied colors automatically.
+- Drag workspace tabs or dropdown entries to reorder them. All stays fixed.
+- Folders, profiles and duplicated profiles created through this sidebar belong to the selected workspace. Other workspaces do not show or search them; All shows everything. Existing entries and entries created in All remain shared. Removing a workspace makes its entries shared again.
+
 - Hide the `Imported from .ssh/config` folder by default, including its search results. Restore it in **Settings → Better Sidebar → General → Hide imported SSH folder**. This only affects this sidebar, and does not remove SSH configuration or stop active sessions.
 - Right-click a server → **Manage → Edit tags…**. Separate multiple tags with commas or new lines. Tags appear next to server names in the profile tree, favorites and search results, and can be searched. Clear the field to remove them.
 - Tags are stored by profile ID under `sidebarPlus.profileTags` in Tabby's configuration and survive restarting. A duplicated profile has a new ID and starts without tags.

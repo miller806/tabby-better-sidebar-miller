@@ -794,6 +794,16 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
         const rawGroupsSnapshot = structuredClone(groups)
 
         const { hiddenGroupIds, hiddenProfileIds } = SidebarPlusTreeComponent.computeWorkspaceFilterState(groups, workspace)
+        for (const group of groups) {
+            if (!this.belongsToWorkspace(undefined, group.id, activeWorkspaceId, groups)) {
+                hiddenGroupIds.add(group.id)
+            }
+            for (const profile of group.profiles ?? []) {
+                if (!this.belongsToWorkspace(profile.id, profile.group, activeWorkspaceId, groups) && profile.id) {
+                    hiddenProfileIds.add(profile.id)
+                }
+            }
+        }
 
         if (hiddenGroupIds.size) {
             groups = groups.filter(g => !hiddenGroupIds.has(g.id))
@@ -1367,7 +1377,7 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
         // `options.host`/`options.user` alongside the name: a server one only
         // remembers by address would otherwise be unreachable from here.
         // Absent on a non-SSH profile, which the search simply skips.
-        const searchable = profiles.filter(p => !p.isTemplate && !this.isHiddenImportedSsh(p))
+        const searchable = profiles.filter(p => !p.isTemplate && !this.isHiddenImportedSsh(p) && this.belongsToWorkspace(p.id, p.group))
         const matches = this.searchProfiles(searchable, q)
         const matchedIds = new Set(matches.map(p => p.id))
         matches.push(...searchable.filter(p => !matchedIds.has(p.id) &&
@@ -1411,9 +1421,10 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
      * folder returned by a search that renders shut says nothing at all.
      */
     private matchingGroups (q: string): PartialProfileGroup<ProfileGroup>[] {
+        const visibleGroups = this.rawGroupsSnapshot.filter(g => this.belongsToWorkspace(undefined, g.id))
         const matches = this.fuzzySearch
-            ? new FuzzySearch(this.rawGroupsSnapshot, ['name'], { sort: false }).search(q)
-            : this.rawGroupsSnapshot.filter(g => (g.name ?? '').toLowerCase().includes(q))
+            ? new FuzzySearch(visibleGroups, ['name'], { sort: false }).search(q)
+            : visibleGroups.filter(g => (g.name ?? '').toLowerCase().includes(q))
         if (!matches.length) {
             return []
         }
@@ -1421,7 +1432,10 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
         // nodes out of the result: run over the matches alone, it would drop
         // the children of a matching folder whose parent did not match.
         const tree = this.profilesService.buildGroupTree(
-            structuredClone(this.rawGroupsSnapshot).map(g => SidebarPlusTreeComponent.intoCollapsable(g, false)),
+            structuredClone(visibleGroups).map(g => {
+                g.profiles = g.profiles?.filter(p => this.belongsToWorkspace(p.id, p.group))
+                return SidebarPlusTreeComponent.intoCollapsable(g, false)
+            }),
         )
         const matchedIds = new Set(matches.map(g => g.id))
         const found: PartialProfileGroup<ProfileGroup>[] = []
@@ -4037,6 +4051,10 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
     private forgetDeletedId (kind: 'profile'|'group', id: string): void {
         this.config.store.sidebarPlus ??= {}
         const sidebarPlus = this.config.store.sidebarPlus
+        const key = kind === 'profile' ? 'profileWorkspaceIds' : 'groupWorkspaceIds'
+        const owners = { ...(sidebarPlus[key] ?? {}) }
+        delete owners[id]
+        sidebarPlus[key] = owners
         const without = (list: string[]|undefined): string[] => (list ?? []).filter(x => x !== id)
 
         // Explicit reassignment on every write, here as everywhere else in this
@@ -4204,6 +4222,12 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
      */
     private migrateWorkspaceGroupId (oldId: string, newId: string): void {
         this.config.store.sidebarPlus ??= {}
+        const owners = { ...(this.config.store.sidebarPlus.groupWorkspaceIds ?? {}) }
+        if (owners[oldId]) {
+            owners[newId] = owners[oldId]
+            delete owners[oldId]
+            this.config.store.sidebarPlus.groupWorkspaceIds = owners
+        }
         const workspaces: SidebarWorkspace[] = this.config.store.sidebarPlus.workspaces ?? []
         for (const ws of workspaces) {
             const hiddenIndex = ws.hiddenGroupIds.indexOf(oldId)
@@ -4462,7 +4486,10 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
             return
         }
         const parentGroupId = this.contextMenuGroup?.id
-        await this.profilesService.newProfileGroup({ name, parentGroupId } as PartialProfileGroup<ProfileGroup>, { genId: true })
+        const workspaceId = this.activeWorkspaceId
+        const group = { name, parentGroupId } as PartialProfileGroup<ProfileGroup>
+        await this.profilesService.newProfileGroup(group, { genId: true })
+        this.assignWorkspace('groupWorkspaceIds', group.id, workspaceId)
         await this.config.save()
         this.closeContextMenu()
     }
@@ -4481,6 +4508,7 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
 
     async pickProfileTemplate (entry: { provider: ProfileProvider<Profile>, template: PartialProfile<Profile> }): Promise<void> {
         const groupId = this.contextMenuGroup?.id
+        const workspaceId = this.activeWorkspaceId
         const base = structuredClone(entry.template) as PartialProfile<Profile> & { isTemplate?: boolean, isBuiltin?: boolean, weight?: number }
         delete base.isTemplate
         delete base.isBuiltin
@@ -4504,6 +4532,7 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
             result.name = entry.provider.getSuggestedName(cfgProxy) ?? entry.provider.name
         }
         await this.profilesService.newProfile(result)
+        this.assignWorkspace('profileWorkspaceIds', result.id, workspaceId)
         await this.config.save()
     }
 
@@ -4702,6 +4731,7 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
      * fresh uuid derived from the new name.
      */
     async duplicateProfile (profile: PartialProfile<Profile>): Promise<void> {
+        const workspaceId = this.activeWorkspaceId
         this.closeContextMenu()
         const copy = structuredClone(profile) as PartialProfile<Profile> & { isTemplate?: boolean, isBuiltin?: boolean }
         if (copy.isBuiltin) {
@@ -4711,6 +4741,7 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
         delete copy.isBuiltin
         copy.name = this.copyNameFor(profile)
         await this.profilesService.newProfile(copy)
+        this.assignWorkspace('profileWorkspaceIds', copy.id, workspaceId)
         // The memo travels with the copy. Nothing carries it on its own — a
         // note is keyed by profile id, and `newProfile()` has just minted a new
         // one — yet duplicating a server to make a variant of it and losing
@@ -4751,6 +4782,77 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
             n++
         }
         return `${base} ${n}`
+    }
+
+    async onWorkspaceReorder (event: DragEvent, targetId: string): Promise<void> {
+        event.preventDefault()
+        event.stopPropagation()
+        const sourceId = event.dataTransfer?.getData('application/x-sidebar-workspace')
+        const workspaces: SidebarWorkspace[] = [...(this.config.store.sidebarPlus.workspaces ?? [])]
+        const from = workspaces.findIndex(w => w.id === sourceId)
+        const to = workspaces.findIndex(w => w.id === targetId)
+        if (from < 0 || to < 0 || from === to) {
+            return
+        }
+        moveItemInArray(workspaces, from, to)
+        this.config.store.sidebarPlus.workspaces = workspaces
+        await this.config.save()
+    }
+
+    onWorkspaceDragStart (event: DragEvent, id: string): void {
+        event.stopPropagation()
+        if (event.dataTransfer) {
+            event.dataTransfer.setData('application/x-sidebar-workspace', id)
+            event.dataTransfer.effectAllowed = 'move'
+        }
+    }
+
+    onWorkspaceDragOver (event: DragEvent): void {
+        if (event.dataTransfer?.types.includes('application/x-sidebar-workspace')) {
+            event.preventDefault()
+            event.stopPropagation()
+            event.dataTransfer.dropEffect = 'move'
+        }
+    }
+
+    private assignWorkspace (key: 'profileWorkspaceIds'|'groupWorkspaceIds', id: string|undefined, workspaceId: string): void {
+        if (id && workspaceId !== 'all') {
+            this.config.store.sidebarPlus[key] = { ...(this.config.store.sidebarPlus[key] ?? {}), [id]: workspaceId }
+        }
+    }
+
+    private belongsToWorkspace (
+        profileId?: string, groupId?: string, workspaceId = this.activeWorkspaceId,
+        groups: PartialProfileGroup<ProfileGroup>[] = this.rawGroupsSnapshot,
+    ): boolean {
+        if (workspaceId === 'all' || !this.showWorkspaces) {
+            return true
+        }
+        const config = this.config.store.sidebarPlus
+        const exists = (id: string): boolean => (config.workspaces ?? []).some((w: SidebarWorkspace) => w.id === id)
+        const owner = profileId ? config.profileWorkspaceIds?.[profileId] : undefined
+        if (owner && exists(owner) && owner !== workspaceId) {
+            return false
+        }
+        const visited = new Set<string>()
+        while (groupId && !visited.has(groupId)) {
+            visited.add(groupId)
+            const groupOwner = config.groupWorkspaceIds?.[groupId]
+            if (groupOwner && exists(groupOwner) && groupOwner !== workspaceId) {
+                return false
+            }
+            groupId = groups.find(g => g.id === groupId)?.parentGroupId
+        }
+        return true
+    }
+
+    tagColor (tag: string): string {
+        // A stable hash gives arbitrary labels a varied color without changing on refresh.
+        let hash = 0
+        for (const char of tag) {
+            hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0
+        }
+        return `hsl(${((hash % 360) + 360) % 360}, 72%, 72%)`
     }
 
     ////// PROFILE TAGS AND VISIBILITY //////

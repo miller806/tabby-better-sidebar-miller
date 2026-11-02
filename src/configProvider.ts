@@ -17,11 +17,9 @@ export interface SidebarWorkspace {
     // carries no color of its own (never the live profile — piège #12), and
     // the workspace tab itself renders a small dot next to its name when set.
     color?: string
-    // Exclusion lists, not inclusion lists: a profile/group created after a
-    // workspace exists must stay visible by default in every workspace
-    // (matches the roadmap's "masquer = décocher" framing — hiding is an
-    // explicit action, not an opt-in). The "Tous" workspace is virtual (not
-    // stored here at all) and is exactly the zero-exclusions case.
+    // Explicit visibility overrides for existing/shared entries. Newly created
+    // entries also have an owner in profileWorkspaceIds/groupWorkspaceIds.
+    // The virtual All workspace bypasses both ownership and exclusions.
     hiddenProfileIds: string[]
     hiddenGroupIds: string[]
     favorites: string[]
@@ -120,6 +118,8 @@ export class SidebarPlusConfigProvider extends ConfigProvider {
             enabled: true,
             hideImportedSsh: true,
             profileTags: {} as Record<string, string[]>,
+            profileWorkspaceIds: {} as Record<string, string>,
+            groupWorkspaceIds: {} as Record<string, string>,
             favorites: [] as string[],
             favoriteGroups: [] as string[],
             recentIcons: [] as string[],
