@@ -186,11 +186,12 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         if (this.interacted) {
             return undefined
         }
+        // `null` means the session was recorded without a workspace and must stay unowned.
         const restored = this.takeRestored(tab)
         if (restored) {
             this.owners.set(tab, restored)
         }
-        return restored
+        return restored ?? undefined
     }
 
     /**
@@ -204,8 +205,10 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         }
         if (!this.interacted) {
             const restored = this.takeRestored(tab)
-            if (restored) {
-                this.owners.set(tab, restored)
+            if (restored !== undefined) {
+                if (restored) {
+                    this.owners.set(tab, restored)
+                }
                 return
             }
         }
@@ -267,7 +270,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
      * the next matching key. Sessions whose pane has no profile id are matched by
      * position alone, which is why they are only ever taken in order.
      */
-    private takeRestored (tab: BaseTabComponent): string|undefined {
+    private takeRestored (tab: BaseTabComponent): string|null|undefined {
         if (this.restoreAttempted.has(tab)) {
             return undefined
         }
@@ -277,7 +280,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         if (entry && entry.key === (key ?? '')) {
             this.restoreAttempted.add(tab)
             this.restoreCursor++
-            return entry.workspace && this.workspaceExists(entry.workspace) ? entry.workspace : undefined
+            return entry.workspace && this.workspaceExists(entry.workspace) ? entry.workspace : null
         }
         if (!key) {
             // Recovery attaches the profile after the tab opens: try again on the next pass.
@@ -294,7 +297,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 this.restoreCursor = index + 1
                 this.restoreDrifted = true
                 const workspace = saved[index].workspace
-                return workspace && this.workspaceExists(workspace) ? workspace : undefined
+                return workspace && this.workspaceExists(workspace) ? workspace : null
             }
         }
         return undefined

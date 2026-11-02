@@ -3,6 +3,11 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.19 (2026-11-02)
+
+- Keep sessions that were recorded without a workspace unowned after a restart: a session opened while All was selected used to adopt the workspace selected at start on the next run.
+- Add regression coverage for that case.
+
 ## 1.0.18 (2026-11-02)
 
 - Record the workspace per session instead of per profile. Sessions of the same profile (or several local shells sharing one profile) no longer collapse onto a single workspace after a restart: the record is an ordered list matching the tab order, and recovery reopens tabs in that order.

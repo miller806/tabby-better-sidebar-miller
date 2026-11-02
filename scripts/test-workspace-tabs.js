@@ -140,6 +140,20 @@ test('two sessions of the same profile keep their own workspace across a restart
     second.service.ngOnDestroy()
 })
 
+test('a session opened while All was selected stays unowned after a restart', () => {
+    const storage = { sidebarPlusActiveWorkspace: 'all' }
+    const first = fixture(storage); first.app.ready$.next(); first.interact()
+    const shared = first.add({ profile: { id: 'shared' } }); first.app.tabOpened$.next(shared); first.service.sync()
+    assert.equal(first.hidden(0), false)
+    first.service.ngOnDestroy()
+
+    const second = fixture({ ...storage, sidebarPlusActiveWorkspace: 'dev' }); second.app.ready$.next()
+    const restored = second.add({ profile: { id: 'shared' } }); second.app.tabOpened$.next(restored); second.service.sync()
+    assert.equal(second.hidden(0), false)
+    second.service.setWorkspace('pro'); second.service.sync(); assert.equal(second.hidden(0), false)
+    second.service.ngOnDestroy()
+})
+
 test('a session whose profile has no id keeps its workspace by position', () => {
     const storage = { sidebarPlusActiveWorkspace: 'pro' }
     const first = fixture(storage); first.app.ready$.next(); first.interact()
