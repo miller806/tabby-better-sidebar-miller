@@ -2,7 +2,13 @@ import { SidebarPlusI18nService } from './i18n'
 import { profileTagColor, profileTagBackground } from './profileTags'
 import { Injectable, NgZone, OnDestroy } from '@angular/core'
 import { AppService, BaseTabComponent, ConfigService, PartialProfile, Profile } from 'tabby-core'
-import { Subscription } from 'rxjs'
+import { Observable, Subscription } from 'rxjs'
+
+type ConnectionTab = BaseTabComponent & {
+    profile?: PartialProfile<Profile>
+    session?: unknown
+    sessionChanged$?: Observable<unknown>
+}
 
 const HIDDEN_CLASS = 'sidebar-plus-workspace-tab-hidden'
 
@@ -24,6 +30,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     private written?: string
     private lastActive = new Map<string, BaseTabComponent>()
     private subscription = new Subscription()
+    private connectionSubscriptions = new Map<BaseTabComponent, Subscription>()
     private observer?: MutationObserver
     private pending?: ReturnType<typeof setTimeout>
     private changingFocus = false
@@ -478,6 +485,20 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     private syncHeaderTags (headers: HTMLElement[]): void {
         const sp = this.config.store.sidebarPlus
         const enabled = (sp?.enabled ?? true) && !!sp?.showTerminalTabTags
+        const panes = enabled ? this.app.tabs.flatMap(tab => this.panes(tab)) as ConnectionTab[] : []
+        for (const [pane, subscription] of this.connectionSubscriptions) {
+            if (!panes.includes(pane)) {
+                subscription.unsubscribe()
+                this.connectionSubscriptions.delete(pane)
+            }
+        }
+        for (const pane of panes) {
+            if (pane.profile?.type === 'ssh' && pane.sessionChanged$ && !this.connectionSubscriptions.has(pane)) {
+                this.zone.runOutsideAngular(() => {
+                    this.connectionSubscriptions.set(pane, pane.sessionChanged$!.subscribe(() => this.schedule()))
+                })
+            }
+        }
         const paired = headers.length === this.app.tabs.length
         headers.forEach((header, index) => {
             const existing = header.querySelector('.sidebar-plus-terminal-tags')
@@ -490,13 +511,16 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 const id = (pane as BaseTabComponent & { profile?: PartialProfile<Profile> }).profile?.id
                 return id ? (sp.profileTags?.[id] ?? []) as string[] : []
             }))]
-            if (!tags.length) {
+            const sshPanes = (this.panes(this.app.tabs[index]) as ConnectionTab[]).filter(pane => pane.profile?.type === 'ssh')
+            const disconnected = sshPanes.some(pane => !pane.session)
+            const status = sshPanes.length ? (disconnected ? 'disconnected' : 'connected') : ''
+            if (!tags.length && !status) {
                 existing?.remove()
                 header.classList.remove('sidebar-plus-has-tags')
                 return
             }
             header.classList.toggle('sidebar-plus-has-tags', true)
-            const signature = JSON.stringify(tags)
+            const signature = JSON.stringify([tags, status])
             if (existing?.getAttribute('data-tags') === signature) {
                 return
             }
@@ -505,6 +529,14 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             rail.className = 'sidebar-plus-terminal-tags'
             rail.setAttribute('data-tags', signature)
             rail.title = tags.join(', ')
+            if (status) {
+                const indicator = document.createElement('span')
+                indicator.className = `sidebar-plus-connection-status ${status}`
+                indicator.title = this.i18n.t(disconnected ? 'Disconnected' : 'Connected')
+                indicator.setAttribute('aria-label', indicator.title)
+                indicator.textContent = disconnected ? `● ${indicator.title}` : '●'
+                rail.appendChild(indicator)
+            }
             for (const tag of tags) {
                 const chip = document.createElement('span')
                 chip.className = 'sidebar-plus-terminal-tag'
@@ -586,6 +618,8 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
 
     ngOnDestroy (): void {
         this.subscription.unsubscribe()
+        for (const subscription of this.connectionSubscriptions.values()) subscription.unsubscribe()
+        this.connectionSubscriptions.clear()
         this.observer?.disconnect()
         this.resizeObserver?.disconnect()
         this.removeNavigation()

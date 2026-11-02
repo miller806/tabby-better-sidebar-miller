@@ -158,6 +158,20 @@ tab-header .sidebar-plus-terminal-tags {
     -webkit-app-region: no-drag;
 }
 
+tab-header .sidebar-plus-connection-status {
+    flex: 0 0 auto;
+    font-size: 10px;
+    line-height: 17px;
+    color: #65c784;
+
+    &.disconnected {
+        color: #ff8585;
+        background: rgba(235, 75, 75, .13);
+        border-radius: 4px;
+        padding: 0 5px;
+    }
+}
+
 tab-header .sidebar-plus-terminal-tag {
     flex: 0 1 auto;
     min-width: 0;

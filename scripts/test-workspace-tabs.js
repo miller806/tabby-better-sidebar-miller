@@ -94,6 +94,42 @@ function fixture (storage = { sidebarPlusActiveWorkspace: 'pro' }) {
     return { app, config, service, add, hidden, headers, observers, strip, storage, interact: () => { for (const handler of [...(listeners.pointerdown ?? [])]) handler() }, outsideTimers: () => outsideTimers, mismatch: () => headers.pop() }
 }
 
+test('SSH header status updates on disconnect and reconnect without polling and releases subscriptions', async () => {
+    const f = fixture(); f.config.store.sidebarPlus.showTerminalTabTags = true
+    f.config.store.sidebarPlus.profileTags = { p: ['production'] }
+    const changes = new Subject()
+    const tab = f.add({ profile: { id: 'p', type: 'ssh' }, session: {}, sessionChanged$: changes })
+    f.service.sync()
+    assert.equal(f.headers[0].rail.children[0].className, 'sidebar-plus-connection-status connected')
+    assert.equal(changes.observers.length, 1)
+    tab.session = null; changes.next(null)
+    await new Promise(resolve => setTimeout(resolve, 100))
+    assert.equal(f.headers[0].rail.children[0].textContent, '● Disconnected')
+    assert.equal(f.headers[0].rail.children[1].textContent, 'production')
+    tab.session = {}; changes.next(tab.session)
+    await new Promise(resolve => setTimeout(resolve, 100))
+    assert.equal(f.headers[0].rail.children[0].textContent, '●')
+    f.config.store.sidebarPlus.showTerminalTabTags = false; f.service.sync()
+    assert.equal(changes.observers.length, 0)
+    assert.equal(f.headers[0].rail, null)
+    f.config.store.sidebarPlus.showTerminalTabTags = true; f.service.sync()
+    f.service.ngOnDestroy(); assert.equal(changes.observers.length, 0)
+})
+
+test('SSH status is per session, includes untagged servers and warns for a disconnected split pane', () => {
+    const f = fixture(); f.config.store.sidebarPlus.showTerminalTabTags = true
+    f.add({ profile: { id: 'p', type: 'ssh' }, session: {} })
+    f.add({ profile: { id: 'p', type: 'ssh' }, session: null })
+    f.add({ getAllTabs: () => [{ profile: { type: 'ssh' }, session: {} }, { profile: { type: 'ssh' }, session: null }] })
+    f.add({ profile: { type: 'local' }, session: null })
+    f.service.sync()
+    assert.equal(f.headers[0].rail.children[0].textContent, '●')
+    assert.equal(f.headers[1].rail.children[0].textContent, '● Disconnected')
+    assert.equal(f.headers[2].rail.children[0].textContent, '● Disconnected')
+    assert.equal(f.headers[3].rail, null)
+    f.service.ngOnDestroy()
+})
+
 test('switching workspaces hides headers without removing or destroying sessions', () => {
     const f = fixture(); const pro = f.add({ profile: { id: 'p' } }); const dev = f.add({ profile: { id: 'd' } })
     f.app.activeTab = pro; f.service.sync()
