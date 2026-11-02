@@ -178,6 +178,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             const existing = header.querySelector('.sidebar-plus-terminal-tags')
             if (!enabled || !paired) {
                 existing?.remove()
+                header.classList.remove('sidebar-plus-has-tags')
                 return
             }
             const tags = [...new Set(this.panes(this.app.tabs[index]).flatMap(pane => {
@@ -186,8 +187,10 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             }))]
             if (!tags.length) {
                 existing?.remove()
+                header.classList.remove('sidebar-plus-has-tags')
                 return
             }
+            header.classList.toggle('sidebar-plus-has-tags', true)
             const signature = JSON.stringify(tags)
             if (existing?.getAttribute('data-tags') === signature) {
                 return
@@ -276,6 +279,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         }
         document.querySelectorAll('tab-header').forEach(h => {
             h.classList.remove(HIDDEN_CLASS)
+            h.classList.remove('sidebar-plus-has-tags')
             h.querySelector('.sidebar-plus-terminal-tags')?.remove()
         })
     }

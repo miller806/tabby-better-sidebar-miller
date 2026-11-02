@@ -8,7 +8,7 @@ Personal fork of [TooMuhtsh/tabby-better-sidebar](https://github.com/TooMuhtsh/t
 
 - Active sessions are docked at the bottom of the sidebar, beneath the independently scrolling profiles/SFTP area. The dock is collapsible, capped to a quarter of the sidebar, and scrolls internally for longer lists. When workspace terminal switching is enabled, the list and its count follow the selected workspace; All and disabling the switch show every active session.
 
-- **Terminal tab tags (optional, off by default):** enable **Settings → Better Sidebar → General → Show tags on terminal tabs** to display all server tags alongside native terminal titles. Split tabs show the unique tags from all their panes. Tag display is independent of workspace tab switching.
+- **Terminal tab tags (optional, off by default):** enable **Settings → Better Sidebar → General → Show tags on terminal tabs** to show native terminal tabs as two-line cards, with the server title above all its colored tags. Tags wrap naturally without an inner scrollbar. Split tabs show the unique tags from all their panes. Tag display is independent of workspace tab switching.
 
 - Compact single-line server rows: smaller indentation, status dots instead of default computer icons, and soft colored tags aligned to the right. All tags are rendered without count folding. When space is limited, scroll the tag rail horizontally; hover to see the full tag list. Custom profile icons are retained. Profile rows stay on one line even when folder name wrapping is enabled.
 

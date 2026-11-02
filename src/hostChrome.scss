@@ -46,26 +46,145 @@ tab-header.sidebar-plus-workspace-tab-hidden {
     display: none !important;
 }
 
-// Native terminal headers share the same small, soft tags as profile rows.
-tab-header .sidebar-plus-terminal-tags {
-    display: flex;
+// Two-line native headers: title first, complete tag collection beneath it.
+// Scoped to tagged headers; hiding a workspace must still win over grid layout.
+.tab-bar:has(tab-header.sidebar-plus-has-tags:not(.sidebar-plus-workspace-tab-hidden)) {
+    height: auto !important;
+    min-height: 62px;
+    align-items: stretch;
+
+    > .tabs {
+        align-items: stretch;
+        gap: 5px;
+        padding: 5px 5px 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar { display: none; }
+    }
+
+    > .btn-group {
+        align-items: center;
+    }
+}
+
+tab-header.sidebar-plus-has-tags:not(.sidebar-plus-workspace-tab-hidden) {
+    display: grid !important;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-rows: 20px auto;
+    align-content: start;
     align-items: center;
-    flex: 0 1 auto;
+    gap: 5px 6px;
+    flex: 0 0 auto !important;
+    width: 240px !important;
+    min-width: 180px !important;
+    max-width: 320px !important;
+    height: auto !important;
+    min-height: 57px;
+    box-sizing: border-box;
+    padding: 7px 11px 9px;
+    border: 1px solid rgba(160, 170, 190, .13);
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    background: rgba(128, 138, 160, .055);
+    transition: background-color 120ms ease, border-color 120ms ease;
+
+    &:hover {
+        background: rgba(128, 138, 160, .12);
+        border-color: rgba(160, 170, 190, .24);
+    }
+
+    &.active {
+        background: rgba(128, 138, 160, .14);
+        border-color: rgba(160, 170, 190, .28);
+        box-shadow: inset 0 -2px 0 var(--theme-primary);
+    }
+
+    > .index {
+        grid-column: 1;
+        grid-row: 1;
+        width: auto;
+        margin: 0;
+        font-size: 10px;
+        opacity: .45;
+    }
+
+    > profile-icon {
+        grid-column: 2;
+        grid-row: 1;
+        margin: 0;
+        font-size: 12px;
+        opacity: .8;
+    }
+
+    > .name {
+        grid-column: 3;
+        grid-row: 1;
+        width: 100%;
+        min-width: 0;
+        margin: 0 !important;
+        padding-right: 22px;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 20px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    > .buttons {
+        top: 4px;
+        right: 4px;
+        height: 24px;
+    }
+
+    > .colorbar { height: 2px; }
+}
+
+tab-header .sidebar-plus-terminal-tags {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
     gap: 4px;
     min-width: 0;
-    max-width: 55%;
-    margin-left: 6px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: thin;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    overflow: visible;
     -webkit-app-region: no-drag;
 }
 
 tab-header .sidebar-plus-terminal-tag {
-    flex: 0 0 auto;
-    padding: 0 4px;
-    border-radius: 3px;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    padding: 1px 6px;
+    border: 1px solid rgba(180, 190, 210, .08);
+    border-radius: 5px;
     font-size: 10px;
-    line-height: 17px;
-    white-space: nowrap;
+    font-weight: 500;
+    line-height: 15px;
+    letter-spacing: .01em;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+// Side-mounted native tabs retain their full-height bar and vertical scrolling.
+.content.tabs-on-left > .tab-bar:has(tab-header.sidebar-plus-has-tags),
+.content.tabs-on-right > .tab-bar:has(tab-header.sidebar-plus-has-tags) {
+    height: 100% !important;
+
+    > .tabs {
+        overflow-x: hidden;
+        overflow-y: auto;
+
+        > tab-header.sidebar-plus-has-tags {
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+    }
 }

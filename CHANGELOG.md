@@ -1,3 +1,8 @@
+## 1.0.15
+
+- Restyle tagged terminal headers as two-line cards, with readable server titles, wrapping colored tags, subtle rounded borders and an active-tab accent.
+- Remove inner tag scrollbars and keep every tag visible, including long labels.
+
 ## 1.0.14
 
 - Stop the 1.0.13 document-wide mutation observer from triggering Angular checks on terminal output. Observe only direct tab-header changes, outside Angular, while the related options are enabled.

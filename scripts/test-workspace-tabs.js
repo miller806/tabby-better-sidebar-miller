@@ -134,12 +134,15 @@ test('terminal header tags show every label and update without enabling workspac
     f.config.store.sidebarPlus.profileTags = { p: ['flink', 'seatunnel', '<prod>'] }
     f.add({ profile: { id: 'p' } }); f.service.sync()
     assert.equal(f.headers[0].rail.children.length, 3)
+    assert.equal(f.headers[0].classes.has('sidebar-plus-has-tags'), true)
     assert.equal(f.headers[0].rail.children[2].textContent, '<prod>')
     f.config.store.sidebarPlus.profileTags.p = ['updated']; f.service.sync()
     assert.equal(f.headers[0].rail.children.length, 1)
     assert.equal(f.headers[0].rail.children[0].textContent, 'updated')
     f.config.store.sidebarPlus.showTerminalTabTags = false; f.service.sync()
-    assert.equal(f.headers[0].rail, null); f.service.ngOnDestroy()
+    assert.equal(f.headers[0].rail, null)
+    assert.equal(f.headers[0].classes.has('sidebar-plus-has-tags'), false)
+    f.service.ngOnDestroy()
 })
 
 
