@@ -10,7 +10,10 @@ const HIDDEN_CLASS = 'sidebar-plus-workspace-tab-hidden'
 @Injectable({ providedIn: 'root' })
 export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     private workspaceId = window.localStorage.sidebarPlusActiveWorkspace ?? 'all'
+    /** Workspace each tab was opened in: the fallback when its profile or folder claims none. */
     private owners = new WeakMap<BaseTabComponent, string>()
+    /** Last written session → workspace map, kept in localStorage across restarts. */
+    private ownerStore?: Record<string, string>
     private lastActive = new Map<string, BaseTabComponent>()
     private subscription = new Subscription()
     private observer?: MutationObserver
@@ -20,6 +23,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     private observedStrip?: Element
     private applied = false
     private dragging = false
+    private interacted = false
     private revealActive = false
     private resizeObserver?: ResizeObserver
     private navigation?: { strip: HTMLElement, previous: HTMLButtonElement, next: HTMLButtonElement, update: () => void }
@@ -29,7 +33,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     constructor (private app: AppService, private config: ConfigService, private zone: NgZone, private i18n: SidebarPlusI18nService) {
         this.subscription.add(this.app.ready$.subscribe(() => {
             this.subscription.add(this.app.tabOpened$.subscribe(tab => {
-                this.owners.set(tab, this.profileOwner(tab) ?? this.currentWorkspace())
+                this.claimOpened(tab)
                 this.visibilityRevision++
                 this.revealActive = true
                 this.schedule()
@@ -67,6 +71,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 this.schedule()
             }))
             this.subscription.add(this.config.changed$.subscribe(() => { this.visibilityRevision++; this.schedule() }))
+            this.listenForInteraction()
             this.schedule()
         }))
     }
@@ -143,19 +148,129 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             return true
         }
         // Settings and other tools stay accessible in every workspace.
-        if (!this.panes(tab).some(p => !!(p as BaseTabComponent & { profile?: unknown }).profile)) {
+        if (!this.hasProfile(tab)) {
             return true
         }
-        let owner = this.owners.get(tab)
-        if (!owner) {
-            owner = this.profileOwner(tab) ?? workspace
-            this.owners.set(tab, owner)
+        // Never claim a tab merely because it is being looked at: recovery attaches
+        // profiles asynchronously, and a restored session must not adopt whichever
+        // workspace happens to be selected when the sidebar first draws.
+        const owner = this.owner(tab)
+        return !owner || owner === workspace
+    }
+
+    /** Workspace a tab belongs to, or undefined when nothing ties it to one. */
+    private owner (tab: BaseTabComponent): string|undefined {
+        // Configured ownership wins, so moving a profile between workspaces applies at once.
+        const configured = this.profileOwner(tab)
+        if (configured) {
+            // A deleted workspace must not leave running sessions unreachable.
+            return this.workspaceExists(configured) ? configured : undefined
         }
-        // A deleted workspace must not leave running sessions unreachable.
-        if (owner !== 'all' && !this.config.store.sidebarPlus?.workspaces?.some((w: { id: string }) => w.id === owner)) {
-            return true
+        const learned = this.owners.get(tab)
+        if (learned) {
+            if (!this.workspaceExists(learned)) {
+                this.owners.delete(tab)
+                return undefined
+            }
+            // The profile can be attached after the tab opens: store it once the key exists.
+            this.remember(tab, learned)
+            return learned
         }
-        return owner === workspace
+        const stored = this.storedOwner(tab)
+        if (stored) {
+            this.owners.set(tab, stored)
+        }
+        return stored
+    }
+
+    /**
+     * A tab the user opens belongs to the workspace they are in, unless its profile
+     * or folder already says otherwise, and the association is persisted so that the
+     * same session comes back to the same workspace after a restart.
+     *
+     * Recovery reopens the previous sessions before the user can interact with the
+     * window. Those tabs keep the workspace recorded for them instead of adopting
+     * whichever workspace happens to be selected.
+     */
+    private claimOpened (tab: BaseTabComponent): void {
+        const workspace = this.currentWorkspace()
+        if (!this.enabled() || workspace === 'all' || this.profileOwner(tab)) {
+            return
+        }
+        if (!this.interacted && this.storedOwner(tab)) {
+            return
+        }
+        this.owners.set(tab, workspace)
+        this.remember(tab, workspace)
+    }
+
+    /** Recovery ends when the user first touches the window: that is a user-opened tab. */
+    private listenForInteraction (): void {
+        if (typeof document.addEventListener !== 'function') {
+            return
+        }
+        this.zone.runOutsideAngular(() => {
+            document.addEventListener('pointerdown', this.markInteracted, true)
+            document.addEventListener('keydown', this.markInteracted, true)
+        })
+    }
+
+    private markInteracted = (): void => {
+        this.interacted = true
+        document.removeEventListener('pointerdown', this.markInteracted, true)
+        document.removeEventListener('keydown', this.markInteracted, true)
+    }
+
+    private hasProfile (tab: BaseTabComponent): boolean {
+        return this.panes(tab).some(pane => !!(pane as BaseTabComponent & { profile?: unknown }).profile)
+    }
+
+    private workspaceExists (id: string): boolean {
+        return !!this.config.store.sidebarPlus?.workspaces?.some((w: { id: string }) => w.id === id)
+    }
+
+    /** Durable identity of a session: the profiles behind its panes. */
+    private sessionKey (tab: BaseTabComponent): string|undefined {
+        const ids = this.panes(tab)
+            .map(pane => (pane as BaseTabComponent & { profile?: PartialProfile<Profile> }).profile?.id)
+            .filter(id => !!id)
+        return ids.length ? ids.join('+') : undefined
+    }
+
+    private storedOwner (tab: BaseTabComponent): string|undefined {
+        const key = this.sessionKey(tab)
+        const owner = key ? this.storedOwners()[key] : undefined
+        return owner && this.workspaceExists(owner) ? owner : undefined
+    }
+
+    private storedOwners (): Record<string, string> {
+        if (!this.ownerStore) {
+            let parsed: unknown
+            try {
+                parsed = JSON.parse(window.localStorage.sidebarPlusSessionOwners ?? '{}')
+            } catch {
+                parsed = {}
+            }
+            this.ownerStore = parsed && typeof parsed === 'object' ? parsed as Record<string, string> : {}
+        }
+        return this.ownerStore
+    }
+
+    private remember (tab: BaseTabComponent, workspace: string): void {
+        const key = this.sessionKey(tab)
+        if (!key || workspace === 'all') {
+            return
+        }
+        const store = this.storedOwners()
+        if (store[key] === workspace) {
+            return
+        }
+        store[key] = workspace
+        try {
+            window.localStorage.sidebarPlusSessionOwners = JSON.stringify(store)
+        } catch {
+            // A full or disabled localStorage costs the association, never the session.
+        }
     }
 
     private needsHeaders (): boolean {
@@ -330,11 +445,6 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             return
         }
         this.syncHeaderTags(headers)
-        for (const tab of this.app.tabs) {
-            if (!this.owners.has(tab)) {
-                this.owners.set(tab, this.profileOwner(tab) ?? this.currentWorkspace())
-            }
-        }
         if (!this.enabled()) {
             headers.forEach(h => h.classList.remove(HIDDEN_CLASS))
             this.revealSelectedHeader(headers)
@@ -386,6 +496,10 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         this.observer?.disconnect()
         this.resizeObserver?.disconnect()
         this.removeNavigation()
+        if (typeof document.removeEventListener === 'function') {
+            document.removeEventListener('pointerdown', this.markInteracted, true)
+            document.removeEventListener('keydown', this.markInteracted, true)
+        }
         if (this.pending !== undefined) {
             clearTimeout(this.pending)
         }

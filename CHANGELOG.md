@@ -3,6 +3,13 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.17 (2026-11-02)
+
+- Keep terminal tabs with their workspace across restarts: the workspace a session was opened in is now stored per machine and reapplied before the sidebar decides what to show.
+- Stop claiming a tab on its first draw. A restored session whose profile is still loading no longer adopts the selected workspace, and a profile or folder assignment always wins over a remembered association.
+- Sessions opened while All is selected are no longer tied to a workspace, and re-opening a shared profile in another workspace updates its record.
+- Add regression coverage for restart, restore-before-profile, All-selected and re-open scenarios.
+
 ## 1.0.16 (2026-11-02)
 
 - Suspend header decoration during native tab dragging and exclude floating drag previews from header matching.

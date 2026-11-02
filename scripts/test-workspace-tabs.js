@@ -5,14 +5,18 @@ const vm = require('node:vm')
 const ts = require('typescript')
 const { Subject, Subscription } = require('rxjs')
 
-function fixture () {
+function fixture (storage = { sidebarPlusActiveWorkspace: 'pro' }) {
     const exports = {}
     const observers = []
     let outside = false
     let outsideTimers = 0
     const strip = { scrollLeft: 0, scrollTop: 0, closest: () => null, getBoundingClientRect: () => ({left:0,right:300,top:0,bottom:60}) }
     let headers = []
-    const document = { body: {}, querySelectorAll: () => headers, createElement: () => ({
+    const listeners = {}
+    const document = { body: {}, querySelectorAll: () => headers,
+        addEventListener (type, handler) { (listeners[type] = listeners[type] ?? []).push(handler) },
+        removeEventListener (type, handler) { listeners[type] = (listeners[type] ?? []).filter(h => h !== handler) },
+        createElement: () => ({
         className: '', style: {}, children: [], attributes: {},
         setAttribute (key, value) { this.attributes[key] = value },
         getAttribute (key) { return this.attributes[key] },
@@ -20,7 +24,7 @@ function fixture () {
         remove () { if (this.parent) this.parent.rail = null },
     }) }
     const context = {
-        exports, document, window: { localStorage: { sidebarPlusActiveWorkspace: 'pro' } },
+        exports, document, window: { localStorage: storage },
         setTimeout: (...args) => { if (outside) outsideTimers++; return setTimeout(...args) }, clearTimeout,
         Element: class {}, ResizeObserver: class { observe () {} disconnect () {} }, MutationObserver: class {
             constructor (callback) { this.callback = callback; this.outside = outside; observers.push(this) }
@@ -51,7 +55,7 @@ function fixture () {
         return tab
     }
     const hidden = index => headers[index].classes.has('sidebar-plus-workspace-tab-hidden')
-    return { app, config, service, add, hidden, headers, observers, strip, outsideTimers: () => outsideTimers, mismatch: () => headers.pop() }
+    return { app, config, service, add, hidden, headers, observers, strip, storage, interact: () => { for (const handler of [...(listeners.pointerdown ?? [])]) handler() }, outsideTimers: () => outsideTimers, mismatch: () => headers.pop() }
 }
 
 test('switching workspaces hides headers without removing or destroying sessions', () => {
@@ -77,9 +81,70 @@ test('tool tabs remain visible and a workspace with no tabs has no active termin
     assert.equal(f.app.activeTab, settings); assert.equal(f.hidden(1), false); f.service.ngOnDestroy()
 })
 
-test('shared profiles opened in All are not claimed by the next workspace', () => {
+test('re-opening the same profile in another workspace moves its recorded workspace', () => {
+    const storage = { sidebarPlusActiveWorkspace: 'pro' }
+    const first = fixture(storage); first.app.ready$.next()
+    const tab = first.add({ profile: { id: 'shared' } }); first.app.tabOpened$.next(tab); first.service.sync()
+    first.service.setWorkspace('dev'); first.service.sync(); assert.equal(first.hidden(0), true)
+    first.service.ngOnDestroy()
+
+    storage.sidebarPlusActiveWorkspace = 'dev'
+    const second = fixture(storage); second.app.ready$.next(); second.interact()
+    const reopened = second.add({ profile: { id: 'shared' } }); second.app.tabOpened$.next(reopened); second.service.sync()
+    assert.equal(second.hidden(0), false)
+    second.service.ngOnDestroy()
+
+    const third = fixture({ ...storage }); third.app.ready$.next()
+    third.add({ profile: { id: 'shared' } }); third.service.sync()
+    assert.equal(third.hidden(0), false)
+    third.service.setWorkspace('pro'); third.service.sync(); assert.equal(third.hidden(0), true)
+    third.service.ngOnDestroy()
+})
+
+test('a shared profile opened while All is selected is never tied to a workspace', () => {
     const f = fixture(); f.service.setWorkspace('all'); f.add({ profile: { id: 'shared' } }); f.service.sync()
-    f.service.setWorkspace('dev'); f.service.sync(); assert.equal(f.hidden(0), true); f.service.ngOnDestroy()
+    f.service.setWorkspace('dev'); f.service.sync(); assert.equal(f.hidden(0), false)
+    f.service.setWorkspace('pro'); f.service.sync(); assert.equal(f.hidden(0), false); f.service.ngOnDestroy()
+})
+
+test('a session returns to the workspace it was opened in after a restart', () => {
+    const storage = { sidebarPlusActiveWorkspace: 'pro' }
+    const first = fixture(storage); first.app.ready$.next()
+    const tab = first.add({ profile: { id: 'shared' } }); first.app.tabOpened$.next(tab); first.service.sync()
+    first.service.setWorkspace('dev'); first.service.sync(); assert.equal(first.hidden(0), true)
+    first.service.ngOnDestroy()
+
+    const second = fixture(storage); second.app.ready$.next()
+    second.add({ profile: { id: 'shared' } }); second.service.sync()
+    assert.equal(second.hidden(0), false)
+    second.service.setWorkspace('dev'); second.service.sync(); assert.equal(second.hidden(0), true)
+    second.service.ngOnDestroy()
+})
+
+test('a restored session keeps its workspace instead of adopting the selected one', () => {
+    const storage = { sidebarPlusActiveWorkspace: 'pro' }
+    const first = fixture(storage); first.app.ready$.next()
+    const tab = first.add({ profile: { id: 'shared' } }); first.app.tabOpened$.next(tab); first.service.sync()
+    first.service.ngOnDestroy()
+
+    // The user closed Tabby while looking at dev, then reopened it.
+    storage.sidebarPlusActiveWorkspace = 'dev'
+    const second = fixture(storage); second.app.ready$.next()
+    const restored = second.add({ profile: { id: 'shared' } }); second.app.tabOpened$.next(restored); second.service.sync()
+    assert.equal(second.hidden(0), true)
+    second.service.setWorkspace('pro'); second.service.sync(); assert.equal(second.hidden(0), false)
+    second.service.ngOnDestroy()
+})
+
+test('a restored session whose profile was still loading is not claimed by the selected workspace', () => {
+    const f = fixture(); f.app.ready$.next()
+    const tab = f.add({ profile: undefined }); f.service.sync()
+    assert.equal(f.hidden(0), false)
+    // Recovery attaches the profile a moment later, with no workspace assignment.
+    tab.profile = { id: 'shared' }; f.service.sync()
+    assert.equal(f.hidden(0), false)
+    f.service.setWorkspace('dev'); f.service.sync(); assert.equal(f.hidden(0), false)
+    f.service.ngOnDestroy()
 })
 
 test('split tabs follow inherited group ownership as a whole', () => {
