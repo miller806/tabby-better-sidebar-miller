@@ -37,27 +37,27 @@ Restart Tabby completely. Install only one of the original plugin and this fork,
 
 ## Publish
 
+The npm release is produced by GitHub Actions from a `v*` tag: build, tests, packing and the publication all happen in CI, which publishes through npm trusted publishing (OIDC) with a SLSA provenance attestation and without any npm token or one-time password.
+
 ```sh
-npm ci --ignore-scripts
-npm run build:prod
-npm run lint:i18n
-npm pack --dry-run
-npm login
-npm publish
+npm version 1.0.17 --no-git-tag-version
+# update CHANGELOG.md, then commit
+git tag -a v1.0.17 -m "1.0.17"
+git push origin master && git push origin v1.0.17
 ```
 
-The first publish requires an npm account with access to this package name. For later releases, increment the version first. npm distributes the built plugin, so installations do not need this source checkout; changes still need to be maintained in this fork.
+The tag must match the `package.json` version. Do not run `npm publish` locally: it demands a one-time password and cannot attach provenance. [`RELEASING.md`](RELEASING.md) documents the OIDC mechanism, the workflow jobs, the guards that make re-runs and late GitHub Releases harmless, and how to fix a failed publication.
 
 ### Build and publish on GitHub
 
-`.github/workflows/publish.yml` builds and uploads an installable npm tarball on pushes and pull requests. After the first manual npm publication, configure this package's **Trusted Publisher** on npmjs.com:
+`.github/workflows/publish.yml` builds and uploads an installable npm tarball on pushes and pull requests. The publish job needs this package's **Trusted Publisher** configured on npmjs.com:
 
 - GitHub owner: `miller806`
 - Repository: `tabby-better-sidebar-miller`
 - Workflow filename: `publish.yml`
-- Allow direct publishing with `npm publish`.
+- Environment: none
 
-Then increment `package.json` and `package-lock.json` together, push them, and publish a GitHub Release whose tag matches the package version (for example `v1.0.12`). The workflow publishes the built tarball with OIDC, without an npm token in GitHub. See [npm trusted publishing documentation](https://docs.npmjs.com/trusted-publishers/).
+See the [npm trusted publishing documentation](https://docs.npmjs.com/trusted-publishers/) for the npm-side setup.
 
 ---
 
