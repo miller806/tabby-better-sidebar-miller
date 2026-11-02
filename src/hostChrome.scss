@@ -77,13 +77,13 @@ tab-header.sidebar-plus-has-tags:not(.sidebar-plus-workspace-tab-hidden) {
     align-items: center;
     gap: 5px 6px;
     flex: 0 0 auto !important;
-    width: 240px !important;
-    min-width: 180px !important;
-    max-width: 320px !important;
+    width: max-content !important;
+    min-width: 140px !important;
+    max-width: 210px !important;
     height: auto !important;
     min-height: 57px;
     box-sizing: border-box;
-    padding: 7px 11px 9px;
+    padding: 7px 9px 9px;
     border: 1px solid rgba(160, 170, 190, .13);
     border-bottom: 0;
     border-radius: 8px 8px 0 0;
@@ -187,4 +187,37 @@ tab-header .sidebar-plus-terminal-tag {
             min-width: 0 !important;
         }
     }
+}
+
+// Scroll controls live outside CDK's drop list, preserving native reorder indices.
+.tab-bar:has(> .sidebar-plus-tab-scroll) > .tabs {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar { display: none; }
+}
+
+.tab-bar > .sidebar-plus-tab-scroll {
+    flex: 0 0 22px;
+    width: 22px;
+    align-self: stretch;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 23px;
+    cursor: pointer;
+    -webkit-app-region: no-drag;
+
+    &[hidden] { display: none !important; }
+    &:disabled { opacity: .25; cursor: default; }
+    &:hover:not(:disabled) { background: rgba(128, 138, 160, .15); }
+}
+
+// CDK moves the header to body while dragging. Keep its placeholder at the same size.
+tab-header.sidebar-plus-has-tags.cdk-drag-placeholder {
+    opacity: .18;
 }

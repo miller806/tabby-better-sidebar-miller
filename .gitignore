@@ -3,6 +3,10 @@ dist/
 *.log
 .tempfiles/
 
+# Local UI verification artifacts (Playwright scripts, screenshots)
+output/
+.playwright-cli/
+
 # Fichier d'instructions de l'assistant : utile en local, hors du dépôt public
 CLAUDE.md
 

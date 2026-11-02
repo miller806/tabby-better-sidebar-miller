@@ -5,6 +5,9 @@
  * Formal register throughout (no "tú"), matching the project's chosen tone.
  */
 const es_ES: Record<string, string> = {
+    "Scroll tabs backward": "Desplazar pestañas hacia atrás",
+    "Scroll tabs forward": "Desplazar pestañas hacia delante",
+
     "Show tags on terminal tabs": "Mostrar etiquetas en las pestañas",
     "Display all server tags beside terminal tab titles.": "Mostrar todas las etiquetas del servidor junto al título.",
 

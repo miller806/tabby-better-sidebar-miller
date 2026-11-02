@@ -5,6 +5,9 @@
  * Formal register throughout ("Sie"), matching the project's chosen tone.
  */
 const de_DE: Record<string, string> = {
+    "Scroll tabs backward": "Tabs rückwärts scrollen",
+    "Scroll tabs forward": "Tabs vorwärts scrollen",
+
     "Show tags on terminal tabs": "Tags in Terminal-Tabs anzeigen",
     "Display all server tags beside terminal tab titles.": "Alle Server-Tags neben den Titeln der Terminal-Tabs anzeigen.",
 

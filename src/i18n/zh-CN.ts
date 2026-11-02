@@ -5,6 +5,9 @@
  * Plurals only carry the `other` category: Chinese has no grammatical number.
  */
 const zh_CN: Record<string, string> = {
+    "Scroll tabs backward": "向前滚动标签页",
+    "Scroll tabs forward": "向后滚动标签页",
+
     "Show tags on terminal tabs": "在终端标签页显示标签",
     "Display all server tags beside terminal tab titles.": "在终端标签页标题旁显示全部服务器标签。",
 

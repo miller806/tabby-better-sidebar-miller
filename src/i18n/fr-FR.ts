@@ -19,6 +19,9 @@
  * zero change).
  */
 const fr_FR: Record<string, string> = {
+    "Scroll tabs backward": "Faire défiler les onglets vers l’arrière",
+    "Scroll tabs forward": "Faire défiler les onglets vers l’avant",
+
     "Show tags on terminal tabs": "Afficher les étiquettes sur les onglets",
     "Display all server tags beside terminal tab titles.": "Afficher toutes les étiquettes du serveur près du titre.",
 

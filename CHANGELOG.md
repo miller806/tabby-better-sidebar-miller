@@ -1,18 +1,40 @@
-## 1.0.15
+# Changelog
+
+All notable changes to `tabby-better-sidebar` are documented here, one entry
+per npm release. Dates are the npm publication dates.
+
+## 1.0.16 (2026-11-02)
+
+- Suspend header decoration during native tab dragging and exclude floating drag previews from header matching.
+- Reveal newly opened or selected tabs when the tab strip overflows, and add independent backward/forward scroll buttons with localized labels.
+- Size tagged terminal cards to their content between 140 and 210px instead of a fixed 240px, keeping full wrapping labels.
+
+## 1.0.15 (2026-11-02)
 
 - Restyle tagged terminal headers as two-line cards, with readable server titles, wrapping colored tags, subtle rounded borders and an active-tab accent.
 - Remove inner tag scrollbars and keep every tag visible, including long labels.
 
-## 1.0.14
+## 1.0.14 (2026-11-02)
 
 - Stop the 1.0.13 document-wide mutation observer from triggering Angular checks on terminal output. Observe only direct tab-header changes, outside Angular, while the related options are enabled.
 - Skip unchanged workspace refreshes and cache active-session filtering across Angular checks.
 - Add regression coverage for disabled-option overhead, observer scope/zone, repeated workspace selection and session-list caching.
 
-# Changelog
+## 1.0.13 (2026-11-02)
 
-All notable changes to `tabby-better-sidebar` are documented here, one entry
-per npm release. Dates are the npm publication dates.
+- Filter terminal tabs by the selected workspace and show compact server rows.
+- Add optional server tags on terminal headers, dock active sessions below the profiles, and drop the branding footer.
+- Add workspace tab regression checks.
+
+## 1.0.12 (2026-11-02)
+
+- Color server tags and organize profiles into workspaces.
+- Persist workspace drag ordering and scope new folders and profiles to their workspace, while All stays comprehensive.
+
+## 1.0.11 (2026-11-02)
+
+- Add server tags on profiles and hide imported SSH profiles.
+- Prepare the Miller fork package, the GitHub build and the npm release workflow.
 
 ## 1.0.10 (2026-11-01)
 

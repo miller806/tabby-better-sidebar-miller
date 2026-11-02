@@ -10,7 +10,7 @@ function fixture () {
     const observers = []
     let outside = false
     let outsideTimers = 0
-    const strip = {}
+    const strip = { scrollLeft: 0, scrollTop: 0, closest: () => null, getBoundingClientRect: () => ({left:0,right:300,top:0,bottom:60}) }
     let headers = []
     const document = { body: {}, querySelectorAll: () => headers, createElement: () => ({
         className: '', style: {}, children: [], attributes: {},
@@ -22,7 +22,7 @@ function fixture () {
     const context = {
         exports, document, window: { localStorage: { sidebarPlusActiveWorkspace: 'pro' } },
         setTimeout: (...args) => { if (outside) outsideTimers++; return setTimeout(...args) }, clearTimeout,
-        Element: class {}, MutationObserver: class {
+        Element: class {}, ResizeObserver: class { observe () {} disconnect () {} }, MutationObserver: class {
             constructor (callback) { this.callback = callback; this.outside = outside; observers.push(this) }
             observe (target, options) { this.target = target; this.options = options }
             disconnect () { this.disconnected = true }
@@ -34,7 +34,7 @@ function fixture () {
         compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, experimentalDecorators: true },
     }).outputText
     vm.runInNewContext(js, context)
-    const events = Object.fromEntries(['ready$', 'tabOpened$', 'tabsChanged$', 'activeTabChange$'].map(k => [k, new Subject()]))
+    const events = Object.fromEntries(['ready$', 'tabOpened$', 'tabsChanged$', 'activeTabChange$', 'tabDragActive$'].map(k => [k, new Subject()]))
     const app = { ...events, tabs: [], activeTab: null, selectTab (tab) { this.activeTab = tab; this.activeTabChange$.next(tab) } }
     const config = { changed$: new Subject(), store: { groups: [], sidebarPlus: {
         enabled: true, showWorkspaces: true, workspaceTabs: true,
@@ -43,11 +43,11 @@ function fixture () {
     const service = new exports.SidebarPlusWorkspaceTabsService(app, config, {
         runOutsideAngular (fn) { const before = outside; outside = true; try { return fn() } finally { outside = before } },
         run: fn => fn(),
-    })
+    }, { t: message => message })
     const add = tab => {
         app.tabs.push(tab)
         const classes = new Set()
-        headers.push({ parentElement: strip, rail: null, querySelector (selector) { return selector === '.sidebar-plus-terminal-tags' ? this.rail : null }, insertBefore (rail) { this.rail = rail; rail.parent = this }, classList: { toggle: (key, value) => value ? classes.add(key) : classes.delete(key), remove: key => classes.delete(key) }, classes })
+        headers.push({ getBoundingClientRect: () => ({left:0,right:150,top:0,bottom:60}), parentElement: strip, rail: null, querySelector (selector) { return selector === '.sidebar-plus-terminal-tags' ? this.rail : null }, insertBefore (rail) { this.rail = rail; rail.parent = this }, classList: { toggle: (key, value) => value ? classes.add(key) : classes.delete(key), remove: key => classes.delete(key) }, classes })
         return tab
     }
     const hidden = index => headers[index].classes.has('sidebar-plus-workspace-tab-hidden')
@@ -208,4 +208,28 @@ test('session list memoizes repeated Angular checks and bypasses filtering when 
     assert.notEqual(view.visibleActiveSessions, first); assert.equal(scans, 4)
     view.workspaceTabs.filtersSessions = false
     assert.equal(view.visibleActiveSessions, view.activeSessions); assert.equal(scans, 4)
+})
+
+
+test('dragging suspends DOM synchronization until native reorder completes', () => {
+    const f = fixture(); f.app.ready$.next()
+    const pro = f.add({ profile: { id: 'p' } }); f.add({ profile: { id: 'd' } }); f.service.sync()
+    assert.equal(f.hidden(1), true)
+    const timers = f.outsideTimers()
+    f.app.tabDragActive$.next(pro)
+    f.config.store.sidebarPlus.workspaceTabs = false
+    f.app.tabsChanged$.next(); f.service.sync()
+    assert.equal(f.hidden(1), true); assert.equal(f.outsideTimers(), timers)
+    f.app.tabDragActive$.next(null); f.service.sync()
+    assert.equal(f.hidden(1), false); f.service.ngOnDestroy()
+})
+
+test('selecting an overflowed tab reveals it without resetting manual scroll on unrelated refreshes', () => {
+    const f = fixture(); f.app.ready$.next()
+    f.config.store.sidebarPlus.workspaceTabs = false; f.config.store.sidebarPlus.showTerminalTabTags = true
+    const tab = f.add({ profile: { id: 'p' } })
+    f.headers[0].getBoundingClientRect = () => ({left:500,right:650,top:0,bottom:60})
+    f.app.selectTab(tab); f.service.sync(); assert.equal(f.strip.scrollLeft, 350)
+    f.strip.scrollLeft = 0; f.service.sync(); assert.equal(f.strip.scrollLeft, 0)
+    f.service.ngOnDestroy()
 })

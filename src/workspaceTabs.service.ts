@@ -1,3 +1,4 @@
+import { SidebarPlusI18nService } from './i18n'
 import { profileTagColor, profileTagBackground } from './profileTags'
 import { Injectable, NgZone, OnDestroy } from '@angular/core'
 import { AppService, BaseTabComponent, ConfigService, PartialProfile, Profile } from 'tabby-core'
@@ -18,20 +19,41 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     private navigationDirection = 0
     private observedStrip?: Element
     private applied = false
+    private dragging = false
+    private revealActive = false
+    private resizeObserver?: ResizeObserver
+    private navigation?: { strip: HTMLElement, previous: HTMLButtonElement, next: HTMLButtonElement, update: () => void }
+
     visibilityRevision = 0
 
-    constructor (private app: AppService, private config: ConfigService, private zone: NgZone) {
+    constructor (private app: AppService, private config: ConfigService, private zone: NgZone, private i18n: SidebarPlusI18nService) {
         this.subscription.add(this.app.ready$.subscribe(() => {
             this.subscription.add(this.app.tabOpened$.subscribe(tab => {
                 this.owners.set(tab, this.profileOwner(tab) ?? this.currentWorkspace())
                 this.visibilityRevision++
+                this.revealActive = true
                 this.schedule()
             }))
             this.subscription.add(this.app.tabsChanged$.subscribe(() => { this.visibilityRevision++; this.schedule() }))
+            // Older Tabby hosts have no drag stream: keep decorating in that case.
+            if (this.app.tabDragActive$) {
+                this.subscription.add(this.app.tabDragActive$.subscribe(tab => {
+                    this.dragging = !!tab
+                    if (this.dragging && this.pending !== undefined) {
+                        clearTimeout(this.pending)
+                        this.pending = undefined
+                    }
+                    if (!this.dragging) {
+                        this.revealActive = true
+                        this.schedule()
+                    }
+                }))
+            }
             this.subscription.add(this.app.activeTabChange$.subscribe(tab => {
                 if (this.changingFocus) {
                     return
                 }
+                this.revealActive = true
                 if (tab && this.visible(tab)) {
                     this.lastActive.set(this.currentWorkspace(), tab)
                 } else if (tab) {
@@ -58,6 +80,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             this.lastActive.set(this.currentWorkspace(), this.app.activeTab)
         }
         this.workspaceId = id
+        this.revealActive = true
         this.navigationDirection = 0
         this.schedule()
     }
@@ -146,6 +169,8 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             return
         }
         this.observer?.disconnect()
+        this.resizeObserver?.disconnect()
+        this.removeNavigation()
         this.observer = undefined
         this.observedStrip = strip ?? undefined
         if (strip) {
@@ -153,12 +178,18 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 this.observer = new MutationObserver(() => this.schedule())
                 // Only direct header insertion/removal. Terminal output and chip updates are outside this scope.
                 this.observer.observe(strip, { childList: true })
+                this.installNavigation(strip as HTMLElement)
+                this.resizeObserver = new ResizeObserver(() => {
+                    this.revealActive = true
+                    this.schedule()
+                })
+                this.resizeObserver.observe(strip)
             })
         }
     }
 
     private schedule (): void {
-        if ((!this.needsHeaders() && !this.applied) || this.pending !== undefined) {
+        if (this.dragging || (!this.needsHeaders() && !this.applied) || this.pending !== undefined) {
             return
         }
         // Neither scheduling nor native header decoration should trigger a full Angular application tick.
@@ -168,6 +199,77 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 this.sync()
             }, 0)
         })
+    }
+
+    private removeNavigation (): void {
+        if (!this.navigation) {
+            return
+        }
+        const { strip, previous, next, update } = this.navigation
+        strip.removeEventListener('scroll', update)
+        previous.remove()
+        next.remove()
+        this.navigation = undefined
+    }
+
+    private installNavigation (strip: HTMLElement): void {
+        const parent = strip.parentElement
+        if (!parent) {
+            return
+        }
+        const previous = document.createElement('button')
+        const next = document.createElement('button')
+        previous.className = next.className = 'sidebar-plus-tab-scroll'
+        previous.type = next.type = 'button'
+        previous.textContent = '‹'
+        next.textContent = '›'
+        previous.setAttribute('aria-label', this.i18n.t('Scroll tabs backward'))
+        next.setAttribute('aria-label', this.i18n.t('Scroll tabs forward'))
+        const vertical = (): boolean => !!strip.closest('.tabs-on-left, .tabs-on-right')
+        const move = (direction: number): void => {
+            if (vertical()) {
+                strip.scrollTop += direction * Math.max(100, strip.clientHeight * .7)
+            } else {
+                strip.scrollLeft += direction * Math.max(100, strip.clientWidth * .7)
+            }
+        }
+        previous.addEventListener('click', () => move(-1))
+        next.addEventListener('click', () => move(1))
+        const update = (): void => {
+            const overflow = !vertical() && strip.scrollWidth > strip.clientWidth + 1
+            previous.hidden = next.hidden = !overflow
+            previous.disabled = strip.scrollLeft <= 1
+            next.disabled = strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 1
+        }
+        parent.insertBefore(previous, strip)
+        parent.insertBefore(next, strip.nextSibling)
+        strip.addEventListener('scroll', update, { passive: true })
+        this.navigation = { strip, previous, next, update }
+        update()
+    }
+
+    private revealSelectedHeader (headers: HTMLElement[]): void {
+        this.navigation?.update()
+        if (!this.revealActive || this.dragging) {
+            return
+        }
+        const index = this.app.activeTab ? this.app.tabs.indexOf(this.app.activeTab) : -1
+        const header = headers[index]
+        const strip = header?.parentElement
+        if (!header || !strip) {
+            return
+        }
+        this.revealActive = false
+        const box = header.getBoundingClientRect()
+        const viewport = strip.getBoundingClientRect()
+        if (strip.closest('.tabs-on-left, .tabs-on-right')) {
+            if (box.top < viewport.top) strip.scrollTop -= viewport.top - box.top
+            else if (box.bottom > viewport.bottom) strip.scrollTop += box.bottom - viewport.bottom
+        } else {
+            if (box.left < viewport.left) strip.scrollLeft -= viewport.left - box.left
+            else if (box.right > viewport.right) strip.scrollLeft += box.right - viewport.right
+        }
+        this.navigation?.update()
     }
 
     private syncHeaderTags (headers: HTMLElement[]): void {
@@ -213,11 +315,20 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     }
 
     private sync (): void {
+        if (this.dragging) {
+            return
+        }
         const direction = this.navigationDirection
         this.navigationDirection = 0
-        const headers = Array.from(document.querySelectorAll<HTMLElement>('tab-header'))
+        const headers = Array.from(document.querySelectorAll<HTMLElement>('.tab-bar > .tabs > tab-header:not(.cdk-drag-preview)'))
         this.watchHeaderStrip(headers)
         this.applied = this.needsHeaders()
+        // Native open/close animations can temporarily leave a different number of headers.
+        // Never assign tags by index until the DOM and app.tabs agree again.
+        if (headers.length !== this.app.tabs.length) {
+            headers.forEach(h => h.classList.remove(HIDDEN_CLASS))
+            return
+        }
         this.syncHeaderTags(headers)
         for (const tab of this.app.tabs) {
             if (!this.owners.has(tab)) {
@@ -226,11 +337,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         }
         if (!this.enabled()) {
             headers.forEach(h => h.classList.remove(HIDDEN_CLASS))
-            return
-        }
-        // Tabby's tab-header ngFor follows app.tabs. Fail open if a host update changes this contract.
-        if (headers.length !== this.app.tabs.length) {
-            headers.forEach(h => h.classList.remove(HIDDEN_CLASS))
+            this.revealSelectedHeader(headers)
             return
         }
         const visible = this.app.tabs.filter(tab => this.visible(tab))
@@ -238,6 +345,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         const active = this.app.activeTab
         if (active && visible.includes(active)) {
             this.lastActive.set(this.currentWorkspace(), active)
+            this.revealSelectedHeader(headers)
             return
         }
         const remembered = this.lastActive.get(this.currentWorkspace())
@@ -260,10 +368,12 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             this.changingFocus = true
             try {
                 this.zone.run(() => this.app.selectTab(next))
+                this.revealActive = true
             } finally {
                 this.changingFocus = false
             }
         }
+        this.revealSelectedHeader(headers)
         for (const [id, tab] of this.lastActive) {
             if (!this.app.tabs.includes(tab)) {
                 this.lastActive.delete(id)
@@ -274,6 +384,8 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     ngOnDestroy (): void {
         this.subscription.unsubscribe()
         this.observer?.disconnect()
+        this.resizeObserver?.disconnect()
+        this.removeNavigation()
         if (this.pending !== undefined) {
             clearTimeout(this.pending)
         }
