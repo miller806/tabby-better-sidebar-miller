@@ -1,5 +1,5 @@
 import { profileTagColor, profileTagBackground } from './profileTags'
-import { Injectable, OnDestroy } from '@angular/core'
+import { Injectable, NgZone, OnDestroy } from '@angular/core'
 import { AppService, BaseTabComponent, ConfigService, PartialProfile, Profile } from 'tabby-core'
 import { Subscription } from 'rxjs'
 
@@ -16,14 +16,18 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     private pending?: ReturnType<typeof setTimeout>
     private changingFocus = false
     private navigationDirection = 0
+    private observedStrip?: Element
+    private applied = false
+    visibilityRevision = 0
 
-    constructor (private app: AppService, private config: ConfigService) {
+    constructor (private app: AppService, private config: ConfigService, private zone: NgZone) {
         this.subscription.add(this.app.ready$.subscribe(() => {
             this.subscription.add(this.app.tabOpened$.subscribe(tab => {
                 this.owners.set(tab, this.profileOwner(tab) ?? this.currentWorkspace())
+                this.visibilityRevision++
                 this.schedule()
             }))
-            this.subscription.add(this.app.tabsChanged$.subscribe(() => this.schedule()))
+            this.subscription.add(this.app.tabsChanged$.subscribe(() => { this.visibilityRevision++; this.schedule() }))
             this.subscription.add(this.app.activeTabChange$.subscribe(tab => {
                 if (this.changingFocus) {
                     return
@@ -40,20 +44,16 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 }
                 this.schedule()
             }))
-            this.subscription.add(this.config.changed$.subscribe(() => this.schedule()))
-            this.observer = new MutationObserver(records => {
-                // Ignore terminal output and header text updates; only header insertion/removal matters.
-                if (records.some(r => [...Array.from(r.addedNodes), ...Array.from(r.removedNodes)]
-                    .some(n => n instanceof Element && (n.matches('tab-header') || n.querySelector('tab-header'))))) {
-                    this.schedule()
-                }
-            })
-            this.observer.observe(document.body, { childList: true, subtree: true })
+            this.subscription.add(this.config.changed$.subscribe(() => { this.visibilityRevision++; this.schedule() }))
             this.schedule()
         }))
     }
 
     setWorkspace (id: string): void {
+        if (id === this.workspaceId) {
+            return
+        }
+        this.visibilityRevision++
         if (id !== this.workspaceId && this.app.activeTab && this.visible(this.app.activeTab)) {
             this.lastActive.set(this.currentWorkspace(), this.app.activeTab)
         }
@@ -62,7 +62,14 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         this.schedule()
     }
 
+    get filtersSessions (): boolean {
+        return this.enabled() && this.currentWorkspace() !== 'all'
+    }
+
     isSessionVisible (tab: BaseTabComponent): boolean {
+        if (!this.filtersSessions) {
+            return true
+        }
         const root = this.app.tabs.find(candidate => candidate === tab || this.panes(candidate).includes(tab))
         return !root || this.visible(root)
     }
@@ -128,13 +135,39 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         return owner === workspace
     }
 
+    private needsHeaders (): boolean {
+        const sp = this.config.store.sidebarPlus
+        return this.enabled() || ((sp?.enabled ?? true) && !!sp?.showTerminalTabTags)
+    }
+
+    private watchHeaderStrip (headers: HTMLElement[]): void {
+        const strip = this.needsHeaders() ? headers[0]?.parentElement : undefined
+        if (strip === this.observedStrip) {
+            return
+        }
+        this.observer?.disconnect()
+        this.observer = undefined
+        this.observedStrip = strip ?? undefined
+        if (strip) {
+            this.zone.runOutsideAngular(() => {
+                this.observer = new MutationObserver(() => this.schedule())
+                // Only direct header insertion/removal. Terminal output and chip updates are outside this scope.
+                this.observer.observe(strip, { childList: true })
+            })
+        }
+    }
+
     private schedule (): void {
-        if (this.pending === undefined) {
+        if ((!this.needsHeaders() && !this.applied) || this.pending !== undefined) {
+            return
+        }
+        // Neither scheduling nor native header decoration should trigger a full Angular application tick.
+        this.zone.runOutsideAngular(() => {
             this.pending = setTimeout(() => {
                 this.pending = undefined
                 this.sync()
             }, 0)
-        }
+        })
     }
 
     private syncHeaderTags (headers: HTMLElement[]): void {
@@ -180,6 +213,8 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         const direction = this.navigationDirection
         this.navigationDirection = 0
         const headers = Array.from(document.querySelectorAll<HTMLElement>('tab-header'))
+        this.watchHeaderStrip(headers)
+        this.applied = this.needsHeaders()
         this.syncHeaderTags(headers)
         for (const tab of this.app.tabs) {
             if (!this.owners.has(tab)) {
@@ -221,7 +256,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         if (next !== active) {
             this.changingFocus = true
             try {
-                this.app.selectTab(next)
+                this.zone.run(() => this.app.selectTab(next))
             } finally {
                 this.changingFocus = false
             }

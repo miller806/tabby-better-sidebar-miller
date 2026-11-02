@@ -286,8 +286,21 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
      */
     activeSessions: ActiveSession[] = []
 
+    private visibleSessionSource?: ActiveSession[]
+    private visibleSessionRevision = -1
+    private visibleSessionCache: ActiveSession[] = []
+
     get visibleActiveSessions (): ActiveSession[] {
-        return this.activeSessions.filter(session => this.workspaceTabs.isSessionVisible(session.tab))
+        if (!this.workspaceTabs.filtersSessions) {
+            return this.activeSessions
+        }
+        const revision = this.workspaceTabs.visibilityRevision
+        if (this.visibleSessionSource !== this.activeSessions || this.visibleSessionRevision !== revision) {
+            this.visibleSessionSource = this.activeSessions
+            this.visibleSessionRevision = revision
+            this.visibleSessionCache = this.activeSessions.filter(session => this.workspaceTabs.isSessionVisible(session.tab))
+        }
+        return this.visibleSessionCache
     }
     /** tab → when it was first seen live, the only record of a session's age there is (see sessionUptime()). */
     private sessionOpenedAt = new Map<SSHTabComponent, number>()

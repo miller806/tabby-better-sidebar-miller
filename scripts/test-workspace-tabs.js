@@ -7,6 +7,10 @@ const { Subject, Subscription } = require('rxjs')
 
 function fixture () {
     const exports = {}
+    const observers = []
+    let outside = false
+    let outsideTimers = 0
+    const strip = {}
     let headers = []
     const document = { body: {}, querySelectorAll: () => headers, createElement: () => ({
         className: '', style: {}, children: [], attributes: {},
@@ -17,7 +21,12 @@ function fixture () {
     }) }
     const context = {
         exports, document, window: { localStorage: { sidebarPlusActiveWorkspace: 'pro' } },
-        setTimeout, clearTimeout, Element: class {}, MutationObserver: class { observe () {} disconnect () {} },
+        setTimeout: (...args) => { if (outside) outsideTimers++; return setTimeout(...args) }, clearTimeout,
+        Element: class {}, MutationObserver: class {
+            constructor (callback) { this.callback = callback; this.outside = outside; observers.push(this) }
+            observe (target, options) { this.target = target; this.options = options }
+            disconnect () { this.disconnected = true }
+        },
         require: name => name === './profileTags' ? { profileTagColor: () => 'red', profileTagBackground: () => 'pink' } : name === 'rxjs' ? { Subscription } : name === '@angular/core'
             ? { Injectable: () => target => target } : {},
     }
@@ -31,15 +40,18 @@ function fixture () {
         enabled: true, showWorkspaces: true, workspaceTabs: true,
         workspaces: [{ id: 'pro' }, { id: 'dev' }], profileWorkspaceIds: { p: 'pro', d: 'dev' },
     } } }
-    const service = new exports.SidebarPlusWorkspaceTabsService(app, config)
+    const service = new exports.SidebarPlusWorkspaceTabsService(app, config, {
+        runOutsideAngular (fn) { const before = outside; outside = true; try { return fn() } finally { outside = before } },
+        run: fn => fn(),
+    })
     const add = tab => {
         app.tabs.push(tab)
         const classes = new Set()
-        headers.push({ rail: null, querySelector (selector) { return selector === '.sidebar-plus-terminal-tags' ? this.rail : null }, insertBefore (rail) { this.rail = rail; rail.parent = this }, classList: { toggle: (key, value) => value ? classes.add(key) : classes.delete(key), remove: key => classes.delete(key) }, classes })
+        headers.push({ parentElement: strip, rail: null, querySelector (selector) { return selector === '.sidebar-plus-terminal-tags' ? this.rail : null }, insertBefore (rail) { this.rail = rail; rail.parent = this }, classList: { toggle: (key, value) => value ? classes.add(key) : classes.delete(key), remove: key => classes.delete(key) }, classes })
         return tab
     }
     const hidden = index => headers[index].classes.has('sidebar-plus-workspace-tab-hidden')
-    return { app, config, service, add, hidden, headers, mismatch: () => headers.pop() }
+    return { app, config, service, add, hidden, headers, observers, strip, outsideTimers: () => outsideTimers, mismatch: () => headers.pop() }
 }
 
 test('switching workspaces hides headers without removing or destroying sessions', () => {
@@ -140,4 +152,57 @@ test('active sessions follow their top-level split workspace only when filtering
     f.service.setWorkspace('all'); assert.equal(f.service.isSessionVisible(pane), true)
     f.service.setWorkspace('pro'); f.config.store.sidebarPlus.workspaceTabs = false
     assert.equal(f.service.isSessionVisible(pane), true); f.service.ngOnDestroy()
+})
+
+
+test('disabled options register no DOM observer and schedule no header work', () => {
+    const f = fixture(); f.config.store.sidebarPlus.workspaceTabs = false
+    f.add({ profile: { id: 'p' } }); f.app.ready$.next()
+    for (let i = 0; i < 1000; i++) f.app.tabsChanged$.next()
+    assert.equal(f.observers.length, 0); assert.equal(f.outsideTimers(), 0)
+    assert.equal(f.service.pending, undefined); f.service.ngOnDestroy()
+})
+
+test('enabled observer watches only header siblings outside Angular and stops on disable', () => {
+    const f = fixture(); f.add({ profile: { id: 'p' } }); f.app.ready$.next(); f.service.sync()
+    assert.equal(f.observers.length, 1)
+    assert.equal(f.observers[0].target, f.strip)
+    assert.equal(f.observers[0].options.childList, true)
+    assert.equal(f.observers[0].options.subtree, undefined)
+    assert.equal(f.observers[0].outside, true)
+    assert.equal(f.outsideTimers(), 1)
+    f.config.store.sidebarPlus.workspaceTabs = false; f.config.changed$.next(); f.service.sync()
+    assert.equal(f.observers[0].disconnected, true)
+    f.service.ngOnDestroy()
+})
+
+test('repeating the same workspace does not schedule refreshes', () => {
+    const f = fixture()
+    for (let i = 0; i < 1000; i++) f.service.setWorkspace('pro')
+    assert.equal(f.outsideTimers(), 0); assert.equal(f.service.visibilityRevision, 0)
+    f.service.setWorkspace('dev'); assert.equal(f.outsideTimers(), 1)
+    f.service.ngOnDestroy()
+})
+
+
+test('session list memoizes repeated Angular checks and bypasses filtering when disabled', () => {
+    const source = ts.createSourceFile('tree.ts', fs.readFileSync('src/components/sidebarTree.component.ts', 'utf8'), ts.ScriptTarget.Latest, true)
+    const tree = source.statements.find(n => ts.isClassDeclaration(n) && n.name.text === 'SidebarPlusTreeComponent')
+    const members = tree.members.filter(n => n.name && ['visibleActiveSessions', 'visibleSessionSource', 'visibleSessionRevision', 'visibleSessionCache'].includes(n.name.getText(source)))
+    const exports = {}
+    const js = ts.transpileModule('class Subject {' + members.map(n => n.getText(source)).join('\n') + '}; exports.Subject = Subject', {
+        compilerOptions: { target: ts.ScriptTarget.ES2020 },
+    }).outputText
+    vm.runInNewContext(js, { exports })
+    const view = new exports.Subject()
+    let scans = 0
+    view.activeSessions = [{ tab: 1 }, { tab: 2 }]
+    view.workspaceTabs = { filtersSessions: true, visibilityRevision: 0, isSessionVisible: () => { scans++; return true } }
+    const first = view.visibleActiveSessions
+    for (let i = 0; i < 1000; i++) assert.equal(view.visibleActiveSessions, first)
+    assert.equal(scans, 2)
+    view.workspaceTabs.visibilityRevision++
+    assert.notEqual(view.visibleActiveSessions, first); assert.equal(scans, 4)
+    view.workspaceTabs.filtersSessions = false
+    assert.equal(view.visibleActiveSessions, view.activeSessions); assert.equal(scans, 4)
 })

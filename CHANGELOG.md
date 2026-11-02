@@ -1,3 +1,9 @@
+## 1.0.14
+
+- Stop the 1.0.13 document-wide mutation observer from triggering Angular checks on terminal output. Observe only direct tab-header changes, outside Angular, while the related options are enabled.
+- Skip unchanged workspace refreshes and cache active-session filtering across Angular checks.
+- Add regression coverage for disabled-option overhead, observer scope/zone, repeated workspace selection and session-list caching.
+
 # Changelog
 
 All notable changes to `tabby-better-sidebar` are documented here, one entry
