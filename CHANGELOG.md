@@ -3,6 +3,18 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.32 (2026-11-02)
+
+- **Tab width setting** (Settings → Better Sidebar → General): Tabby gives every
+  tab 200px, so a wide window showed three of them and left the rest of a long
+  title ellipsised anyway. Compact — the new default — caps a card at 168px and
+  Very compact at 124px, letting twice as many fit; short titles stop reserving
+  the full width. Cards carrying server tags keep a slightly wider floor than
+  plain tabs, since they are two lines tall, but follow the same setting.
+- The scroll strip (‹ › buttons, reveal-on-select) is now installed for the
+  narrow settings too, not only for workspace or tag mode: an overflowing strip
+  has to be scrollable, and the buttons are what make it usable.
+
 ## 1.0.31 (2026-11-02)
 
 - A transfer row now says **which server it belongs to** whenever that is not

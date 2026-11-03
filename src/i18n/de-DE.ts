@@ -151,6 +151,12 @@ const de_DE: Record<string, string> = {
     'The clipboard holds no files': 'Die Zwischenablage enthält keine Dateien',
     'This folder is empty.': 'Dieser Ordner ist leer.',
     'This transfer belongs to another session: {label}': 'Dieser Transfer gehört zu einer anderen Sitzung: {label}',
+    'Tab width': 'Tabbreite',
+    'Tabby gives every tab 200px, which fits three cards on a wide window. Narrower tabs fit more of them; the strip scrolls and its arrows appear on their own.':
+        'Tabby gibt jedem Tab 200 px, womit in ein breites Fenster nur drei passen. Schmalere Tabs lassen mehr zu; die Leiste scrollt und ihre Pfeile erscheinen von selbst.',
+    'Tabby default (wide)': 'Tabby-Standard (breit)',
+    'Compact': 'Kompakt',
+    'Very compact': 'Sehr kompakt',
     '{name} uploaded to {destination}': '{name} nach {destination} hochgeladen',
     '{count} items uploaded to {destination}': '{count} Elemente nach {destination} hochgeladen',
     'Could not upload {name}: {error}': '{name} konnte nicht hochgeladen werden: {error}',

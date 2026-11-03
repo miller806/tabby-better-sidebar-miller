@@ -4,7 +4,7 @@ Personal fork of [TooMuhtsh/tabby-better-sidebar](https://github.com/TooMuhtsh/t
 
 ## Miller additions
 
-- Overflowed terminal tabs have previous/next scroll buttons, and selecting/opening a tab scrolls it into view. Header updates pause during native dragging so previews cannot scramble tags or workspace visibility.
+- **Tab width** (Settings → Better Sidebar → General): Tabby hands every tab 200px, which fits three on a wide window. Compact (the default) and Very compact narrow that budget, so many more fit, and the strip scrolls with its own ‹ › buttons. Overflowed tabs also scroll into view when selected or opened, and header updates pause during native dragging so previews cannot scramble tags or workspace visibility.
 
 - The sidebar branding/version footer is removed to give the list and session dock more room; plugin settings remain available in Tabby Settings.
 

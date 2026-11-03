@@ -12,6 +12,11 @@ type ConnectionTab = BaseTabComponent & {
 
 const HIDDEN_CLASS = 'sidebar-plus-workspace-tab-hidden'
 
+/** The `tabWidth` setting, with the value an unset or unknown one means. */
+export function tabWidthSetting (value: unknown): 'default'|'compact'|'tight' {
+    return value === 'default' || value === 'tight' ? value : 'compact'
+}
+
 /** Filters headers without removing tabs from Tabby: recovery, shutdown and sessions keep all tabs. */
 @Injectable({ providedIn: 'root' })
 export class SidebarPlusWorkspaceTabsService implements OnDestroy {
@@ -443,7 +448,11 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
 
     private needsHeaders (): boolean {
         const sp = this.config.store.sidebarPlus
-        return this.enabled() || ((sp?.enabled ?? true) && !!sp?.showTerminalTabTags)
+        // Narrow tabs make the strip overflow on their own, and the scroll
+        // buttons are what makes an overflowing strip usable — so the machinery
+        // this method gates has to exist for them too.
+        const narrowTabs = (sp?.enabled ?? true) && tabWidthSetting(sp?.tabWidth) !== 'default'
+        return this.enabled() || narrowTabs || ((sp?.enabled ?? true) && !!sp?.showTerminalTabTags)
     }
 
     private watchHeaderStrip (headers: HTMLElement[]): void {

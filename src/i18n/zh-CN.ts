@@ -146,6 +146,12 @@ const zh_CN: Record<string, string> = {
     'The clipboard holds no files': '剪贴板里没有文件',
     'This folder is empty.': '此文件夹为空。',
     'This transfer belongs to another session: {label}': '此传输属于另一个会话：{label}',
+    'Tab width': '标签宽度',
+    'Tabby gives every tab 200px, which fits three cards on a wide window. Narrower tabs fit more of them; the strip scrolls and its arrows appear on their own.':
+        'Tabby 固定给每个标签 200px，在宽窗口里只放得下三个。标签变窄就能放下更多；标签栏会自动滚动，箭头也会自动出现。',
+    'Tabby default (wide)': 'Tabby 默认（宽）',
+    'Compact': '紧凑',
+    'Very compact': '极紧凑',
     '{name} uploaded to {destination}': '{name} 已上传到 {destination}',
     '{count} items uploaded to {destination}': '已将 {count} 项上传到 {destination}',
     'Could not upload {name}: {error}': '无法上传 {name}：{error}',

@@ -54,6 +54,19 @@
             toggle([ngModel]='terminalTabTagsEnabled', (ngModelChange)="setBlock('showTerminalTabTags', $event)")
 
       .feature-card
+        .form-line
+          .header
+            .title {{ lblTabWidth }} #[i.fas.fa-info-circle.info-hint([title]='lblTabWidthHint')]
+          .control
+            select#sidebar-plus-tab-width.form-control(
+              [ngModel]='tabWidth',
+              (ngModelChange)='setTabWidth($event)'
+            )
+              option(value='default') {{ lblTabWidthDefault }}
+              option(value='compact') {{ lblTabWidthCompact }}
+              option(value='tight') {{ lblTabWidthTight }}
+
+      .feature-card
         .form-line.block-switch
           .header
             .title {{ 'Hide imported SSH folder' | translate }}

@@ -69,6 +69,46 @@ tab-header.sidebar-plus-workspace-tab-hidden {
     }
 }
 
+// Tab width. Tabby hands every horizontal tab the same 200px (`targetTabSize`
+// in its tab bar), which fits three cards on a wide window and leaves the rest
+// of a long title ellipsised anyway. The setting on <body> narrows that budget;
+// the strip scrolls, and the plugin's own scroll buttons take over from there.
+//
+// `width: max-content` with a max keeps a short title from reserving 160px of
+// strip for eight characters, while the max is what actually decides how many
+// tabs fit — hence both bounds moving together.
+// `flex: 0 0 auto` and not just a width: Tabby keeps a fixed `flex-basis` on
+// every header, and a flex-basis always wins over `width` — the tagged cards
+// further down this file carry the same override for the same reason.
+body.sidebar-plus-tabs-compact .tab-bar > .tabs tab-header {
+    flex: 0 0 auto !important;
+    width: max-content !important;
+    min-width: 92px !important;
+    max-width: 168px !important;
+}
+
+body.sidebar-plus-tabs-tight .tab-bar > .tabs tab-header {
+    flex: 0 0 auto !important;
+    width: max-content !important;
+    min-width: 72px !important;
+    max-width: 124px !important;
+}
+
+// Same rule as the scroll-button block above, for the case where the strip is
+// narrow without the plugin's buttons having been installed yet (a first paint,
+// or the feature switched off): an overflowing strip has to be scrollable
+// rather than clipped.
+body.sidebar-plus-tabs-compact .tab-bar > .tabs,
+body.sidebar-plus-tabs-tight .tab-bar > .tabs {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar { display: none; }
+}
+
 tab-header.sidebar-plus-has-tags:not(.sidebar-plus-workspace-tab-hidden) {
     display: grid !important;
     grid-template-columns: auto auto minmax(0, 1fr);
@@ -234,6 +274,19 @@ tab-header .sidebar-plus-terminal-tag {
     &[hidden] { display: none !important; }
     &:disabled { opacity: .25; cursor: default; }
     &:hover:not(:disabled) { background: rgba(128, 138, 160, .15); }
+}
+
+// A tagged card carries two lines, so it keeps a wider floor than a plain tab —
+// but it still has to respect the setting, or the cards that show the most
+// information would be the ones crowding the strip.
+body.sidebar-plus-tabs-compact tab-header.sidebar-plus-has-tags {
+    min-width: 116px !important;
+    max-width: 172px !important;
+}
+
+body.sidebar-plus-tabs-tight tab-header.sidebar-plus-has-tags {
+    min-width: 96px !important;
+    max-width: 132px !important;
 }
 
 // CDK moves the header to body while dragging. Keep its placeholder at the same size.

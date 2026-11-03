@@ -3,6 +3,7 @@ import { ApplicationRef, ComponentRef, EnvironmentInjector, Injectable, createCo
 import { AppService, ConfigService, NotificationsService } from 'tabby-core'
 import { SidebarPlusTreeComponent } from './components/sidebarTree.component'
 import { SidebarPlusSftpDockComponent } from './components/sftpDock.component'
+import { tabWidthSetting } from './workspaceTabs.service'
 import { checkHost, hostSupports } from './hostCompat'
 import { SidebarPlusI18nService } from './i18n'
 import { SidebarPlusVisibilityService } from './visibility.service'
@@ -102,6 +103,11 @@ export class SidebarPlusMountService {
         const panelShown = (sp?.showSftp ?? true) && (sp?.showTransfers ?? true)
         const hide = enabled && panelShown && (sp?.hideNativeTransfersMenu ?? true)
         document.body.classList.toggle(HIDE_NATIVE_TRANSFERS_CLASS, hide)
+        // The tab strip belongs to Tabby, and this plugin's chrome rules are
+        // global CSS: a class on <body> is how they get their hands on it.
+        const width = enabled ? tabWidthSetting(sp?.tabWidth) : 'default'
+        document.body.classList.toggle('sidebar-plus-tabs-compact', width === 'compact')
+        document.body.classList.toggle('sidebar-plus-tabs-tight', width === 'tight')
     }
 
     private mount (): void {

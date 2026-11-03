@@ -131,6 +131,11 @@ export class SidebarPlusConfigProvider extends ConfigProvider {
             // Ids of the optional SFTP browser columns, in display order —
             // the name column is always shown and never listed here. See
             // SidebarPlusSftpBrowserComponent.AVAILABLE_COLUMNS for the ids.
+            // How wide a terminal tab header is allowed to get. Tabby's own
+            // budget is 200px, which fits three cards on a wide window; the
+            // scroll strip this plugin installs makes narrower cards worthwhile,
+            // so the default is the compact one. See hostChrome.scss.
+            tabWidth: 'compact' as 'default'|'compact'|'tight',
             sftpColumns: ['size', 'date', 'mode'] as string[],
             // Where the SFTP view lives: a full-height dock at the right of the
             // window (default — a file table needs the room), or the sidebar

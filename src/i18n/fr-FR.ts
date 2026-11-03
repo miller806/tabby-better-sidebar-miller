@@ -172,6 +172,12 @@ const fr_FR: Record<string, string> = {
     'The clipboard holds no files': 'Le presse-papiers ne contient aucun fichier',
     'This folder is empty.': 'Ce dossier est vide.',
     'This transfer belongs to another session: {label}': 'Ce transfert appartient à une autre session : {label}',
+    'Tab width': 'Largeur des onglets',
+    'Tabby gives every tab 200px, which fits three cards on a wide window. Narrower tabs fit more of them; the strip scrolls and its arrows appear on their own.':
+        'Tabby donne 200 px à chaque onglet, ce qui n’en place que trois sur une fenêtre large. Des onglets plus étroits en tiennent davantage ; la bande défile et ses flèches apparaissent d’elles-mêmes.',
+    'Tabby default (wide)': 'Tabby par défaut (large)',
+    'Compact': 'Compacts',
+    'Very compact': 'Très compacts',
     '{name} uploaded to {destination}': '{name} envoyé vers {destination}',
     '{count} items uploaded to {destination}': '{count} éléments envoyés vers {destination}',
     'Could not upload {name}: {error}': 'Impossible d’envoyer {name} : {error}',

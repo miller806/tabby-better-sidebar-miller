@@ -8,6 +8,7 @@ import { BETTER_PANEL_EMBEDDED } from '../betterPanel'
 import { SidebarSnippet } from '../configProvider'
 import { SidebarPlusEditorService } from '../editorLauncher.service'
 import { hostSupports } from '../hostCompat'
+import { tabWidthSetting } from '../workspaceTabs.service'
 import { normalizeSftpDateFormat } from '../sftpDate'
 import { SidebarPlusI18nService } from '../i18n'
 import { SidebarPlusSnippetsService } from '../snippets.service'
@@ -199,6 +200,22 @@ export class SidebarPlusSettingsTabComponent {
     get lblSftp (): string { return this.i18n.t('SFTP view') }
     get lblSftpHint (): string { return this.i18n.t('One SFTP channel per session actually browsed.') }
     get lblSftpDesc (): string { return this.i18n.t('The SFTP tab of the sidebar and its panel.') }
+    get lblTabWidth (): string { return this.i18n.t('Tab width') }
+    get lblTabWidthHint (): string { return this.i18n.t('Tabby gives every tab 200px, which fits three cards on a wide window. Narrower tabs fit more of them; the strip scrolls and its arrows appear on their own.') }
+    get lblTabWidthDefault (): string { return this.i18n.t('Tabby default (wide)') }
+    get lblTabWidthCompact (): string { return this.i18n.t('Compact') }
+    get lblTabWidthTight (): string { return this.i18n.t('Very compact') }
+
+    /** Current tab width setting, resolved through the same helper the tabs service uses. */
+    get tabWidth (): string {
+        return tabWidthSetting(this.config.store.sidebarPlus?.tabWidth)
+    }
+
+    async setTabWidth (value: string): Promise<void> {
+        this.config.store.sidebarPlus.tabWidth = tabWidthSetting(value)
+        await this.config.save()
+    }
+
     get lblPlacement (): string { return this.i18n.t('Position') }
     get lblPlacementHint (): string { return this.i18n.t('A full-height column leaves room for the columns; the sidebar keeps the profile tree visible beside it.') }
     get lblPlacementRight (): string { return this.i18n.t('Right side panel') }

@@ -78,6 +78,9 @@ function fixture (storage = { sidebarPlusActiveWorkspace: 'pro' }) {
     const app = { ...events, tabs: [], activeTab: null, selectTab (tab) { this.activeTab = tab; this.activeTabChange$.next(tab) } }
     const config = { changed$: new Subject(), store: { groups: [], sidebarPlus: {
         enabled: true, showWorkspaces: true, workspaceTabs: true,
+        // The narrow-tab machinery (scroll strip) is on by default in the app;
+        // these tests care about the workspace/tag ones, so it is off here.
+        tabWidth: 'default',
         workspaces: [{ id: 'pro' }, { id: 'dev' }], profileWorkspaceIds: { p: 'pro', d: 'dev' },
     } } }
     const service = new exports.SidebarPlusWorkspaceTabsService(app, config, {
@@ -445,6 +448,24 @@ test('session list memoizes repeated Angular checks and bypasses filtering when 
     assert.equal(view.visibleActiveSessions, view.activeSessions); assert.equal(scans, 4)
 })
 
+
+test('narrow tabs install the scroll strip machinery on their own', () => {
+    const f = fixture(); f.app.ready$.next()
+    f.config.store.sidebarPlus.workspaceTabs = false
+    f.config.store.sidebarPlus.showTerminalTabTags = false
+    // Tabby's 200px cards fit three tabs on a wide window; the narrow setting
+    // overflows, and the strip's scroll buttons are what makes that usable.
+    f.add({ profile: { id: 'p' } })
+    f.service.sync()
+    assert.equal(f.observers.length, 0)
+    f.config.store.sidebarPlus.tabWidth = 'compact'
+    f.app.tabsChanged$.next(); f.service.sync()
+    assert.equal(f.observers.length, 1)
+    f.config.store.sidebarPlus.tabWidth = 'default'
+    f.app.tabsChanged$.next(); f.service.sync()
+    assert.equal(f.observers[0].disconnected, true)
+    f.service.ngOnDestroy()
+})
 
 test('dragging suspends DOM synchronization until native reorder completes', () => {
     const f = fixture(); f.app.ready$.next()
