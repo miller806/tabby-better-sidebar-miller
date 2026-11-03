@@ -131,7 +131,6 @@ const de_DE: Record<string, string> = {
     'Copy selection ({count})': 'Auswahl kopieren ({count})',
     'Cut selection ({count})': 'Auswahl ausschneiden ({count})',
     'Paste into this folder': 'In diesen Ordner einfügen',
-    'Paste the copied files here': 'Die kopierten Dateien hier einfügen',
     '{name} cannot be copied into itself': '{name} kann nicht in sich selbst kopiert werden',
     '{name} copied to {destination}': '{name} nach {destination} kopiert',
     '{count} items copied to {destination}': '{count} Elemente nach {destination} kopiert',
@@ -140,6 +139,14 @@ const de_DE: Record<string, string> = {
     '{succeeded} copied, {failed} failed': '{succeeded} kopiert, {failed} fehlgeschlagen',
     'Copied across sessions — the originals were left in place':
         'Sitzungsübergreifend kopiert — die Originale wurden belassen',
+    'Paste files copied here, or copied in your file manager':
+        'Hier kopierte Dateien einfügen oder die im Dateimanager kopierten',
+    'The clipboard holds no files': 'Die Zwischenablage enthält keine Dateien',
+    '{name} uploaded to {destination}': '{name} nach {destination} hochgeladen',
+    '{count} items uploaded to {destination}': '{count} Elemente nach {destination} hochgeladen',
+    'Could not upload {name}: {error}': '{name} konnte nicht hochgeladen werden: {error}',
+    'No upload succeeded': 'Kein Upload war erfolgreich',
+    '{succeeded} uploaded, {failed} failed': '{succeeded} hochgeladen, {failed} fehlgeschlagen',
 
     // sftpBrowser.component.ts — showContextMenu()
     'Open with...': 'Öffnen mit...',

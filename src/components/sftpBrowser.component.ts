@@ -1,5 +1,6 @@
 import './sftpBrowser.component.scss'
-import { join, posix } from 'path'
+import * as fs from 'fs'
+import { basename, join, posix } from 'path'
 import { filesize } from 'filesize'
 import { AfterViewChecked, Component, ElementRef, HostListener, Inject, NgZone, OnDestroy, ViewChild } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
@@ -17,6 +18,7 @@ import { SidebarPlusI18nService } from '../i18n'
 import { readRemoteEntry, resolveRemoteSymlink } from '../remoteEntry'
 import { downloadRemoteTree, uploadLocalTree } from '../remoteTree'
 import { isPathInside, planPaste, SftpClipboardEntry, SidebarPlusSftpClipboardService } from '../sftpClipboard.service'
+import { readOsFilePaths } from '../osClipboard'
 import { formatSftpDate, formatSftpDateTime, normalizeSftpDateFormat, SftpDateFormat } from '../sftpDate'
 import { SidebarPlusTempFilesService } from '../tempFiles.service'
 import { SftpTransfers } from '../transfers'
@@ -2105,8 +2107,7 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         if (this.isDirectoryEntry(item)) {
             items.push({
                 label: this.i18n.t('Paste into this folder'),
-                enabled: this.clipboard.hasEntries,
-                click: () => { void this.pasteClipboard(item.fullPath) },
+                click: () => { void this.paste(item.fullPath) },
             })
         }
         if (selected.length > 1 && this.selection.has(item.fullPath)) {
@@ -2259,7 +2260,7 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
             const key = event.key.toLowerCase()
             const act = key === 'c' ? () => this.copySelection(false)
                 : key === 'x' ? () => this.copySelection(true)
-                    : key === 'v' ? () => void this.pasteClipboard(this.path)
+                    : key === 'v' ? () => void this.paste(this.path)
                         : null
             if (act) {
                 // Stopped in the capture phase: the terminal's own keydown would
@@ -2312,6 +2313,15 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         }
     }
 
+    /**
+     * Local file modes mean nothing on Windows — `fs.stat()` reports 0666 for
+     * every file there — and imposing that on a remote POSIX file makes it
+     * world-writable. Zero tells the uploader to keep the server's own default.
+     */
+    private uploadMode (mode: number): number {
+        return process.platform === 'win32' ? 0 : mode
+    }
+
     /** `Enter`: exactly what a double-click does, for the one selected entry. */
     private async openSelection (): Promise<void> {
         const items = this.selectedItems()
@@ -2329,10 +2339,11 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
      */
     private pasteInFlight = false
 
-    /** Whether the background menu offers "Paste" as an action rather than a greyed-out line. */
-    get hasClipboard (): boolean {
-        return this.clipboard.hasEntries
-    }
+    /** Guards a local-file upload the same way, and against a remote paste starting on top of it. */
+    private uploadInFlight = false
+
+    /** Fingerprint of the OS clipboard the last upload came from, see `paste()`. */
+    private lastOsPaste?: string
 
     /**
      * `Ctrl-C` / `Ctrl-X` on the selection, or the context menu's two entries.
@@ -2359,7 +2370,110 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
 
     pasteFromMenu (): void {
         this.backgroundMenuOpen = false
-        void this.pasteClipboard(this.path)
+        void this.paste(this.path)
+    }
+
+    /**
+     * `Ctrl-V` / the menu's Paste.
+     *
+     * Two clipboards are in play: the panel's own (remote entries copied
+     * inside the browser) and the operating system's (files copied in Explorer,
+     * Finder or a Linux file manager). The OS one wins when it holds something
+     * *new* since the last paste — that is the file manager gesture the user
+     * just performed — and the panel's own is used otherwise, which is what
+     * makes copying remote files keep working after a local upload.
+     */
+    async paste (destination: string): Promise<void> {
+        const paths = this.addressedOsPaths()
+        const fingerprint = paths.join('\n')
+        if (paths.length && fingerprint !== this.lastOsPaste) {
+            this.lastOsPaste = fingerprint
+            await this.uploadPaths(paths, destination)
+            return
+        }
+        if (this.clipboard.hasEntries) {
+            await this.pasteClipboard(destination)
+            return
+        }
+        if (paths.length) {
+            // Same files as the previous paste: pasting twice is legitimate.
+            await this.uploadPaths(paths, destination)
+            return
+        }
+        this.notices.notice(this.i18n.t('The clipboard holds no files'))
+    }
+
+    /** What the OS clipboard holds, minus paths that no longer exist. */
+    private addressedOsPaths (): string[] {
+        try {
+            return readOsFilePaths()
+        } catch {
+            return []
+        }
+    }
+
+    /**
+     * Sends local files and folders to `destination`.
+     *
+     * The same conflict rule as a remote paste: a name already taken is
+     * refused, never merged into or overwritten. A folder is walked with
+     * `uploadLocalTree()`, so its whole contents land on their own transfer
+     * lines; a file goes through one `upload()` and keeps its permissions.
+     */
+    private async uploadPaths (paths: string[], destination: string): Promise<void> {
+        if (!this.sftp || this.uploadInFlight) {
+            return
+        }
+        let listing: SFTPFile[]
+        try {
+            listing = await this.sftp.readdir(destination)
+        } catch (e) {
+            this.notices.error(this.i18n.t('Could not read the contents of {name}', { name: destination }), String(e))
+            return
+        }
+        const existing = new Set(listing.map(file => file.name))
+        this.uploadInFlight = true
+        let uploaded = 0
+        let failed = 0
+        let firstError: string|null = null
+        try {
+            for (const local of paths) {
+                const name = basename(local)
+                const target = posix.join(destination, name)
+                if (existing.has(name)) {
+                    failed++
+                    firstError = firstError ?? this.i18n.t('{name} already exists in {destination}', { name, destination })
+                    continue
+                }
+                try {
+                    const stats = await fs.promises.stat(local)
+                    if (stats.isDirectory()) {
+                        await uploadLocalTree(this.sftp, local, target, (localPath, remotePath, mode, size) =>
+                            this.fileTransfers.upload(this.sftp, remotePath, localPath, posix.basename(remotePath), size, this.uploadMode(mode)))
+                    } else {
+                        await this.fileTransfers.upload(this.sftp, target, local, name, stats.size, this.uploadMode(stats.mode & 0o7777))
+                    }
+                    uploaded++
+                } catch (e) {
+                    failed++
+                    firstError = firstError ?? this.i18n.t('Could not upload {name}: {error}', { name, error: String(e) })
+                }
+            }
+        } finally {
+            this.uploadInFlight = false
+        }
+        if (destination === this.path) {
+            await this.refreshListing()
+        }
+        if (uploaded === 0) {
+            this.notices.error(this.i18n.t('No upload succeeded'), firstError ?? undefined)
+        } else if (failed === 0) {
+            this.notices.notice(paths.length === 1
+                ? this.i18n.t('{name} uploaded to {destination}', { name: basename(paths[0]), destination })
+                : this.i18n.t('{count} items uploaded to {destination}', { count: uploaded, destination }))
+        } else {
+            this.notices.error(this.i18n.t('{succeeded} uploaded, {failed} failed', { succeeded: uploaded, failed }), firstError ?? undefined)
+        }
     }
 
     /**
@@ -2472,7 +2586,7 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
                         await downloadRemoteTree(source, entry.path, local, (remote, localPath, item) =>
                             this.fileTransfers.download(source, remote, localPath, item.name, item.size, item.mode))
                         await uploadLocalTree(this.sftp, local, target, (localPath, remotePath, mode, size) =>
-                            this.fileTransfers.upload(this.sftp, remotePath, localPath, posix.basename(remotePath), size, mode))
+                            this.fileTransfers.upload(this.sftp, remotePath, localPath, posix.basename(remotePath), size, this.uploadMode(mode)))
                     } else {
                         await this.fileTransfers.download(source, entry.path, local, entry.name, entry.size, entry.mode)
                         await this.fileTransfers.upload(this.sftp, target, local, entry.name, entry.size, entry.mode)

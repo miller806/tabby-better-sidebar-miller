@@ -152,7 +152,6 @@ const fr_FR: Record<string, string> = {
     'Copy selection ({count})': 'Copier la sélection ({count})',
     'Cut selection ({count})': 'Couper la sélection ({count})',
     'Paste into this folder': 'Coller dans ce dossier',
-    'Paste the copied files here': 'Coller ici les fichiers copiés',
     '{name} cannot be copied into itself': '{name} ne peut pas être copié dans lui-même',
     '{name} copied to {destination}': '{name} copié vers {destination}',
     '{count} items copied to {destination}': '{count} éléments copiés vers {destination}',
@@ -161,6 +160,14 @@ const fr_FR: Record<string, string> = {
     '{succeeded} copied, {failed} failed': '{succeeded} copiés, {failed} en échec',
     'Copied across sessions — the originals were left in place':
         'Copié entre sessions — les originaux ont été laissés en place',
+    'Paste files copied here, or copied in your file manager':
+        'Coller les fichiers copiés ici, ou ceux copiés dans votre gestionnaire de fichiers',
+    'The clipboard holds no files': 'Le presse-papiers ne contient aucun fichier',
+    '{name} uploaded to {destination}': '{name} envoyé vers {destination}',
+    '{count} items uploaded to {destination}': '{count} éléments envoyés vers {destination}',
+    'Could not upload {name}: {error}': 'Impossible d’envoyer {name} : {error}',
+    'No upload succeeded': 'Aucun envoi n’a abouti',
+    '{succeeded} uploaded, {failed} failed': '{succeeded} envoyés, {failed} en échec',
 
     // sftpBrowser.component.ts — showContextMenu()
     'Open with...': 'Ouvrir avec...',

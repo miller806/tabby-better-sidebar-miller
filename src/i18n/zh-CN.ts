@@ -128,7 +128,6 @@ const zh_CN: Record<string, string> = {
     'Copy selection ({count})': '复制所选（{count}）',
     'Cut selection ({count})': '剪切所选（{count}）',
     'Paste into this folder': '粘贴到此文件夹',
-    'Paste the copied files here': '把复制的文件粘贴到这里',
     '{name} cannot be copied into itself': '{name} 不能复制到自身',
     '{name} copied to {destination}': '{name} 已复制到 {destination}',
     '{count} items copied to {destination}': '已将 {count} 项复制到 {destination}',
@@ -136,6 +135,13 @@ const zh_CN: Record<string, string> = {
     'No copy succeeded': '没有复制成功',
     '{succeeded} copied, {failed} failed': '成功 {succeeded} 项，失败 {failed} 项',
     'Copied across sessions — the originals were left in place': '已跨会话复制——原文件保留在原位',
+    'Paste files copied here, or copied in your file manager': '粘贴在这里复制的文件，或在你文件管理器中复制的文件',
+    'The clipboard holds no files': '剪贴板里没有文件',
+    '{name} uploaded to {destination}': '{name} 已上传到 {destination}',
+    '{count} items uploaded to {destination}': '已将 {count} 项上传到 {destination}',
+    'Could not upload {name}: {error}': '无法上传 {name}：{error}',
+    'No upload succeeded': '没有上传成功',
+    '{succeeded} uploaded, {failed} failed': '成功上传 {succeeded} 项，失败 {failed} 项',
 
     // sftpBrowser.component.ts — showContextMenu()
     'Open with...': '打开方式…',

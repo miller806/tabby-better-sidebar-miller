@@ -227,12 +227,12 @@
     a.menu-item((click)='createFileFromMenu()')
         .fa.fa-fw.fas.fa-file-circle-plus.me-2
         span {{ 'Create a file' | translate }}
-    //- Greyed out rather than absent while the clipboard is empty: the entry
-    //- says the gesture exists, which is how one finds out about it at all.
+    //- Always offered: it pastes remote entries copied in the browser *and*
+    //- files copied in the OS file manager, so whether there is anything to
+    //- paste is a question for the clipboard, answered when it is used.
     a.menu-item(
-        [class.menu-item-disabled]='!hasClipboard',
         (click)='pasteFromMenu()',
-        [title]="'Paste the copied files here' | translate"
+        [title]="'Paste files copied here, or copied in your file manager' | translate"
     )
         .fa.fa-fw.fas.fa-paste.me-2
         span {{ 'Paste' | translate }}

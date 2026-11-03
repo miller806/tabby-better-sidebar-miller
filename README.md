@@ -187,6 +187,12 @@ be **frozen** on one session so it stops following the focused tab.
   nothing transits; a copy downloads to a temporary folder and uploads back,
   with each file on its own line of the transfer manager. An existing name is
   refused rather than overwritten, and a folder cannot be pasted into itself
+- **Pasting files copied in your OS file manager**: copy in Explorer, Finder or
+  a Linux file manager, then `Ctrl-V` in the panel to upload them into the
+  folder on screen — files and whole folders. A freshly copied OS selection
+  takes precedence over the panel's own clipboard, which keeps working after
+  it. (macOS exposes multi-file selections in a format Electron cannot read;
+  single files and folders work there)
 - **Keyboard navigation**: `Enter` opens the selected entry — folders navigate
   into them, files take the same edit round-trip as a double-click — and
   `Backspace` goes up one level. Clicking in the panel moves the keyboard into

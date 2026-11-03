@@ -3,6 +3,21 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.25 (2026-11-02)
+
+- **`Ctrl-V` now uploads files copied in the OS file manager.** Copy in
+  Explorer, Finder or a Linux file manager, then paste in the SFTP panel and
+  the files — or whole folders, walked recursively — are uploaded into the
+  folder on screen, each on its own transfer line. Files are read from the
+  clipboard's `FileNameW`, `FileName`, `text/uri-list` and `public.file-url`
+  formats, and paths that no longer exist are ignored.
+- A freshly copied OS selection takes precedence over the panel's own
+  clipboard, so copying remote files still works after a local upload; a paste
+  with neither says so instead of doing nothing.
+- Uploads refuse a name that already exists, as every other copy in this panel
+  does, and no longer impose Windows' meaningless 0666 file mode on the remote
+  file.
+
 ## 1.0.24 (2026-11-02)
 
 - Closing a tab no longer flashes every tab of every workspace: while the
