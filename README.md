@@ -4,6 +4,7 @@ Personal fork of [TooMuhtsh/tabby-better-sidebar](https://github.com/TooMuhtsh/t
 
 ## Miller additions
 
+- **Tab bar buttons** (Settings → Better Sidebar → General): Tabby places one icon group before its drag spacer and one after, so the left group eats into the strip. *Grouped on the right* (the default) collects every plugin's button at the far right in two rows, handing that width back to the tabs; *Tabby default* restores the two-sided layout.
 - **Tab width** (Settings → Better Sidebar → General): Tabby hands every tab 200px, which fits three on a wide window. Compact (the default) and Very compact narrow that budget, so many more fit, and the strip scrolls with its own ‹ › buttons. Overflowed tabs also scroll into view when selected or opened, and header updates pause during native dragging so previews cannot scramble tags or workspace visibility.
 
 - The sidebar branding/version footer is removed to give the list and session dock more room; plugin settings remain available in Tabby Settings.

@@ -108,6 +108,7 @@ export class SidebarPlusMountService {
         const width = enabled ? tabWidthSetting(sp?.tabWidth) : 'default'
         document.body.classList.toggle('sidebar-plus-tabs-compact', width === 'compact')
         document.body.classList.toggle('sidebar-plus-tabs-tight', width === 'tight')
+        document.body.classList.toggle('sidebar-plus-toolbar-grouped', enabled && sp?.tabBarButtons !== 'inline')
     }
 
     private mount (): void {

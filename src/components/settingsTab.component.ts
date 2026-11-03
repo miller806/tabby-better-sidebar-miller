@@ -216,6 +216,21 @@ export class SidebarPlusSettingsTabComponent {
         await this.config.save()
     }
 
+    get lblToolbar (): string { return this.i18n.t('Tab bar buttons') }
+    get lblToolbarHint (): string { return this.i18n.t('Grouped collects every button at the far right, two rows tall, and leaves that width to the tabs.') }
+    get lblToolbarInline (): string { return this.i18n.t('Tabby default (either side)') }
+    get lblToolbarGrouped (): string { return this.i18n.t('Grouped on the right') }
+
+    /** `grouped` unless the configuration says otherwise — see the chrome stylesheet. */
+    get tabBarButtons (): string {
+        return this.config.store.sidebarPlus?.tabBarButtons === 'inline' ? 'inline' : 'grouped'
+    }
+
+    async setTabBarButtons (value: string): Promise<void> {
+        this.config.store.sidebarPlus.tabBarButtons = value === 'inline' ? 'inline' : 'grouped'
+        await this.config.save()
+    }
+
     get lblPlacement (): string { return this.i18n.t('Position') }
     get lblPlacementHint (): string { return this.i18n.t('A full-height column leaves room for the columns; the sidebar keeps the profile tree visible beside it.') }
     get lblPlacementRight (): string { return this.i18n.t('Right side panel') }

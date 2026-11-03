@@ -152,6 +152,11 @@ const zh_CN: Record<string, string> = {
     'Tabby default (wide)': 'Tabby 默认（宽）',
     'Compact': '紧凑',
     'Very compact': '极紧凑',
+    'Tab bar buttons': '标签栏按钮',
+    'Grouped collects every button at the far right, two rows tall, and leaves that width to the tabs.':
+        '「右侧成组」把所有按钮收到最右侧、分两排显示，把腾出的宽度留给标签页。',
+    'Tabby default (either side)': 'Tabby 默认（两侧分布）',
+    'Grouped on the right': '右侧成组',
     '{name} uploaded to {destination}': '{name} 已上传到 {destination}',
     '{count} items uploaded to {destination}': '已将 {count} 项上传到 {destination}',
     'Could not upload {name}: {error}': '无法上传 {name}：{error}',

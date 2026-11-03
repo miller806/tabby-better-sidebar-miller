@@ -136,6 +136,11 @@ export class SidebarPlusConfigProvider extends ConfigProvider {
             // scroll strip this plugin installs makes narrower cards worthwhile,
             // so the default is the compact one. See hostChrome.scss.
             tabWidth: 'compact' as 'default'|'compact'|'tight',
+            // Tab bar icons: `inline` is Tabby's own layout — one group either
+            // side of the strip. `grouped` collects every provider's button at
+            // the far right, two rows tall, which gives the strip the width the
+            // left group was using. See hostChrome.scss.
+            tabBarButtons: 'grouped' as 'inline'|'grouped',
             sftpColumns: ['size', 'date', 'mode'] as string[],
             // Where the SFTP view lives: a full-height dock at the right of the
             // window (default — a file table needs the room), or the sidebar

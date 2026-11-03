@@ -67,6 +67,18 @@
               option(value='tight') {{ lblTabWidthTight }}
 
       .feature-card
+        .form-line
+          .header
+            .title {{ lblToolbar }} #[i.fas.fa-info-circle.info-hint([title]='lblToolbarHint')]
+          .control
+            select#sidebar-plus-tab-bar-buttons.form-control(
+              [ngModel]='tabBarButtons',
+              (ngModelChange)='setTabBarButtons($event)'
+            )
+              option(value='inline') {{ lblToolbarInline }}
+              option(value='grouped') {{ lblToolbarGrouped }}
+
+      .feature-card
         .form-line.block-switch
           .header
             .title {{ 'Hide imported SSH folder' | translate }}

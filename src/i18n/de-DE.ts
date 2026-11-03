@@ -157,6 +157,11 @@ const de_DE: Record<string, string> = {
     'Tabby default (wide)': 'Tabby-Standard (breit)',
     'Compact': 'Kompakt',
     'Very compact': 'Sehr kompakt',
+    'Tab bar buttons': 'Schaltflächen der Tableiste',
+    'Grouped collects every button at the far right, two rows tall, and leaves that width to the tabs.':
+        'Gruppiert sammelt alle Schaltflächen ganz rechts in zwei Reihen und überlässt die Breite den Tabs.',
+    'Tabby default (either side)': 'Tabby-Standard (beidseitig)',
+    'Grouped on the right': 'Rechts gruppiert',
     '{name} uploaded to {destination}': '{name} nach {destination} hochgeladen',
     '{count} items uploaded to {destination}': '{count} Elemente nach {destination} hochgeladen',
     'Could not upload {name}: {error}': '{name} konnte nicht hochgeladen werden: {error}',

@@ -153,6 +153,11 @@ const es_ES: Record<string, string> = {
     'Tabby default (wide)': 'Predeterminado de Tabby (ancho)',
     'Compact': 'Compactas',
     'Very compact': 'Muy compactas',
+    'Tab bar buttons': 'Botones de la barra de pestañas',
+    'Grouped collects every button at the far right, two rows tall, and leaves that width to the tabs.':
+        'Agrupados reúne todos los botones en el extremo derecho, en dos filas, y deja ese ancho a las pestañas.',
+    'Tabby default (either side)': 'Predeterminado de Tabby (a cada lado)',
+    'Grouped on the right': 'Agrupados a la derecha',
     '{name} uploaded to {destination}': '{name} subido a {destination}',
     '{count} items uploaded to {destination}': '{count} elementos subidos a {destination}',
     'Could not upload {name}: {error}': 'No se pudo subir {name}: {error}',

@@ -3,6 +3,17 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.34 (2026-11-02)
+
+- **All tab-bar buttons now sit in one cluster at the far right, two rows
+  tall** (Settings → Better Sidebar → General → Tab bar buttons, *Grouped on the
+  right* by default). Tabby renders one group before its drag spacer and one
+  after, so the left group was eating into the strip: with an icon per plugin
+  that is real width taken from the tabs. The groups are moved next to each
+  other with CSS `order` — no DOM rewriting — and laid out as a two-column grid
+  inside the tab bar's own height, with one divider separating them from the
+  tabs. *Tabby default (either side)* restores the original layout.
+
 ## 1.0.33 (2026-11-02)
 
 - The tab-bar toolbar buttons — Tabby's own gear, the `+` and quick-command
