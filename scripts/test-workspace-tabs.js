@@ -305,6 +305,33 @@ test('closing a tab never flashes the other workspaces for a frame', () => {
     f.service.ngOnDestroy()
 })
 
+test('a busy window syncs without re-walking every workspace for every tab', () => {
+    // Guards the caching behind the 1.0.26 smoothness pass: ownership used to
+    // rescan the profile list, every folder ancestor and every workspace
+    // exclusion for each pane of each tab, twice per sync. The bound is
+    // deliberately loose — it is there to catch a return to that shape, not to
+    // measure the machine it runs on.
+    const f = fixture()
+    f.config.store.sidebarPlus.workspaces = Array.from({ length: 12 }, (_, i) => ({
+        id: `w${i}`,
+        hiddenProfileIds: [],
+        hiddenGroupIds: Array.from({ length: 40 }, (_, g) => `g${i}-${g}`),
+    }))
+    f.config.store.groups = Array.from({ length: 200 }, (_, i) => ({ id: `g${i % 12}-${i % 40}` }))
+    f.config.store.profiles = Array.from({ length: 300 }, (_, i) => ({ id: `p${i}` }))
+    for (let i = 0; i < 60; i++) {
+        f.add({ profile: { id: `p${i}` } })
+    }
+    f.service.sync()
+    const start = process.hrtime.bigint()
+    for (let i = 0; i < 50; i++) {
+        f.service.sync()
+    }
+    const perSync = Number(process.hrtime.bigint() - start) / 50 / 1e6
+    assert.ok(perSync < 5, `sync() took ${perSync.toFixed(2)} ms per call`)
+    f.service.ngOnDestroy()
+})
+
 test('tab-open events attach shared profiles to the current workspace', () => {
     const f = fixture(); f.app.ready$.next()
     const tab = f.add({ profile: { id: 'shared' } }); f.app.tabOpened$.next(tab); f.service.sync()

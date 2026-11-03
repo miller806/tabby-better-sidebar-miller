@@ -72,8 +72,10 @@ export class SidebarPlusSftpComponent implements OnInit, OnDestroy {
             // to Profiles — the auto-return feature is for a session dying
             // *while* the view is open, not for the moment of entry.
             this.suppressAutoReturnOnce = true
+            this.startTicking()
             this.sync()
         } else {
+            this.stopTicking()
             this.releaseBoundPanel()
         }
     }
@@ -198,19 +200,38 @@ export class SidebarPlusSftpComponent implements OnInit, OnDestroy {
         // which lands on the next tick, outside the change detection pass that
         // is running right now — attachView() during CD is asking for trouble.
         this.subscription.add(
-            merge(
-                this.app.activeTabChange$,
-                this.app.tabsChanged$,
-                // The focused tab can stay the same while its session comes up
-                // (or drops): nothing emits for that, so the bound tab is also
-                // re-evaluated on a slow tick. sync() returns immediately while
-                // the view is inactive, so this idles at near-zero cost.
-                timer(0, 1000),
-            ).subscribe(() => this.sync()),
+            merge(this.app.activeTabChange$, this.app.tabsChanged$).subscribe(() => this.sync()),
         )
+        if (this.isActive) {
+            this.startTicking()
+        }
+    }
+
+    /** The 1s re-evaluation of the bound tab, while — and only while — this view is on screen. */
+    private tick: Subscription|null = null
+
+    /**
+     * The focused tab can stay the same while its session comes up (or drops):
+     * nothing emits for that, so the bound tab is re-evaluated on a slow tick.
+     *
+     * Created on activation and torn down on release, rather than ticking
+     * forever behind a `sync()` that returns immediately: a live RxJS timer
+     * runs inside the Angular zone, so an inactive SFTP view was forcing a full
+     * change detection pass *every second* over the profile tree the user was
+     * actually looking at.
+     */
+    private startTicking (): void {
+        this.stopTicking()
+        this.tick = timer(0, 1000).subscribe(() => this.sync())
+    }
+
+    private stopTicking (): void {
+        this.tick?.unsubscribe()
+        this.tick = null
     }
 
     ngOnDestroy (): void {
+        this.stopTicking()
         this.subscription?.unsubscribe()
         this.splitFocusSubscription?.unsubscribe()
         for (const ref of this.panels.values()) {

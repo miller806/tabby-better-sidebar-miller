@@ -23,6 +23,10 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
      * profiles behind a tab, which is all that survives recovery: two sessions of the
      * same profile are told apart by their position, never by the profile alone.
      */
+    /** Profile and folder index caches, keyed on the config arrays they were built from. */
+    private profileIndex?: { source: Profile[], map: Map<string, Profile> }
+    private groupIndex?: { source: { id: string, parentGroupId?: string }[], map: Map<string, string|undefined> }
+    private inferenceCache = new Map<string, { signature: string, result: string|undefined }>()
     private saved?: { key: string, workspace: string }[]
     private restoreCursor = 0
     private restoreDrifted = false
@@ -88,7 +92,14 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 }
                 this.schedule()
             }))
-            this.subscription.add(this.config.changed$.subscribe(() => { this.visibilityRevision++; this.schedule() }))
+            this.subscription.add(this.config.changed$.subscribe(() => {
+                // Profiles, folders and workspace exclusions may all have moved.
+                this.profileIndex = undefined
+                this.groupIndex = undefined
+                this.inferenceCache.clear()
+                this.visibilityRevision++
+                this.schedule()
+            }))
             this.listenForInteraction()
             this.listenForShutdown()
             this.schedule()
@@ -139,7 +150,8 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
 
     private profileOwner (tab: BaseTabComponent): string|undefined {
         const sp = this.config.store.sidebarPlus
-        for (const pane of this.panes(tab)) {
+        const panes = this.panes(tab)
+        for (const pane of panes) {
             const profile = (pane as BaseTabComponent & { profile?: PartialProfile<Profile> }).profile
             if (!profile) {
                 continue
@@ -155,35 +167,90 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 if (sp?.groupWorkspaceIds?.[groupId]) {
                     return sp.groupWorkspaceIds[groupId]
                 }
-                groupId = this.config.store.groups?.find((g: { id: string }) => g.id === groupId)?.parentGroupId
+                groupId = this.parentOf(groupId)
             }
         }
         // Older configurations express ownership by hiding a folder/profile in
         // every other workspace. Use the same ancestor exclusions as the tree,
         // before trusting a session's previously learned (possibly wrong) owner.
-        const inferred = this.panes(tab).map(pane => {
+        const inferred: (string|undefined)[] = []
+        for (const pane of panes) {
             const sessionProfile = (pane as BaseTabComponent & { profile?: PartialProfile<Profile> }).profile
             if (!sessionProfile) {
-                return undefined
+                continue
             }
-            const profile = (sessionProfile.id ? this.config.store.profiles?.find((p: Profile) => p.id === sessionProfile.id) : undefined) ?? sessionProfile
-            const ancestors = new Set<string>()
-            let groupId = profile.group
-            while (groupId && !ancestors.has(groupId)) {
-                ancestors.add(groupId)
-                groupId = this.config.store.groups?.find((g: { id: string }) => g.id === groupId)?.parentGroupId
-            }
-            const candidates = (sp?.workspaces ?? []).filter((workspace: {
-                id: string, hiddenProfileIds?: string[], hiddenGroupIds?: string[],
-            }) => !workspace.hiddenProfileIds?.includes(profile.id)
-                && !workspace.hiddenGroupIds?.some(id => ancestors.has(id)))
-            return candidates.length === 1 ? candidates[0].id as string : undefined
-        })
+            const profile = (sessionProfile.id ? this.profileById(sessionProfile.id) : undefined) ?? sessionProfile
+            inferred.push(this.inferredOwner(profile))
+        }
         // A mixed split remains a single tab; do not infer ownership from one pane.
         return inferred.length && inferred[0] && inferred.every(owner => owner === inferred[0]) ? inferred[0] : undefined
     }
 
-    private visible (tab: BaseTabComponent): boolean {
+    /**
+     * Profiles by id, rebuilt only when the config hands over a new list.
+     *
+     * `config.store.profiles.find()` used to run once per pane per evaluation —
+     * and ownership is evaluated for every tab on every sync, so a forty-tab
+     * window was doing thousands of linear scans of the profile list.
+     */
+    private profileById (id: string): Profile|undefined {
+        const source = this.config.store.profiles
+        if (!this.profileIndex || this.profileIndex.source !== source) {
+            this.profileIndex = { source, map: new Map((source ?? []).map(profile => [profile.id, profile])) }
+        }
+        return this.profileIndex.map.get(id)
+    }
+
+    /** Parent of a folder id, from the same kind of index — the ancestor walks above run per pane per sync. */
+    private parentOf (groupId: string): string|undefined {
+        const source = this.config.store.groups
+        if (!this.groupIndex || this.groupIndex.source !== source) {
+            this.groupIndex = { source, map: new Map((source ?? []).map(group => [group.id, group.parentGroupId])) }
+        }
+        return this.groupIndex.map.get(groupId)
+    }
+
+    /**
+     * The exclusion-based owner of one profile, or undefined when no single
+     * workspace is left or several are.
+     *
+     * Memoised per profile and ancestor set until the workspace list changes:
+     * it walks every workspace against every exclusion, and a sidebar with a
+     * dozen workspaces re-ran that for every session on every sync.
+     */
+    private inferredOwner (profile: PartialProfile<Profile>): string|undefined {
+        const ancestors = new Set<string>()
+        let groupId = profile.group
+        while (groupId && !ancestors.has(groupId)) {
+            ancestors.add(groupId)
+            groupId = this.parentOf(groupId)
+        }
+        const workspaces = this.config.store.sidebarPlus?.workspaces as {
+            id: string, hiddenProfileIds?: string[], hiddenGroupIds?: string[],
+        }[]|undefined
+        // The signature is what makes a silent config edit visible without
+        // redoing the whole workspace walk: exclusion lists only ever grow or
+        // shrink through the UI, and a real swap goes through config.save(),
+        // which clears this cache outright.
+        const signature = `${workspaces?.length ?? 0}|${(workspaces ?? [])
+            .map(workspace => `${workspace.hiddenProfileIds?.length ?? 0}:${workspace.hiddenGroupIds?.length ?? 0}`)
+            .join(',')}`
+        const key = `${profile.id ?? ''}\u0000${[...ancestors].join('\u0000')}`
+        const cached = this.inferenceCache.get(key)
+        if (cached && cached.signature === signature) {
+            return cached.result
+        }
+        const candidates = (workspaces ?? []).filter(workspace => !workspace.hiddenProfileIds?.includes(profile.id)
+            && !workspace.hiddenGroupIds?.some(id => ancestors.has(id)))
+        const result = candidates.length === 1 ? candidates[0].id : undefined
+        if (this.inferenceCache.size > 1000) {
+            this.inferenceCache.clear()
+        }
+        this.inferenceCache.set(key, { signature, result })
+        return result
+    }
+
+    private visible (tab: BaseTabComponent, owners?: Map<BaseTabComponent, string|undefined>): boolean {
         const workspace = this.currentWorkspace()
         if (!this.enabled() || workspace === 'all') {
             return true
@@ -195,7 +262,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         // Never claim a tab merely because it is being looked at: recovery attaches
         // profiles asynchronously, and a restored session must not adopt whichever
         // workspace happens to be selected when the sidebar first draws.
-        const owner = this.owner(tab)
+        const owner = owners ? owners.get(tab) : this.owner(tab)
         return !owner || owner === workspace
     }
 
@@ -353,11 +420,14 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     }
 
     /** Records where every open tab belongs, in tab order, for the next start. */
-    private writeOwners (): void {
+    private writeOwners (owners?: Map<BaseTabComponent, string|undefined>): void {
         if (!this.enabled()) {
             return
         }
-        const entries = this.app.tabs.map(tab => ({ key: this.sessionKey(tab) ?? '', workspace: this.owner(tab) ?? '' }))
+        const entries = this.app.tabs.map(tab => ({
+            key: this.sessionKey(tab) ?? '',
+            workspace: (owners ? owners.get(tab) : this.owner(tab)) ?? '',
+        }))
         const serialized = JSON.stringify(entries)
         if (serialized === this.written) {
             return
@@ -525,7 +595,9 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 return
             }
             header.classList.toggle('sidebar-plus-has-tags', true)
-            const signature = JSON.stringify([tags, status])
+            // A plain string signature, not JSON: this runs for every header on
+            // every sync, and the only thing it is compared against is itself.
+            const signature = `${status}\u0001${tags.join('\u0000')}`
             if (existing?.getAttribute('data-tags') === signature) {
                 return
             }
@@ -564,10 +636,18 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
         const headers = Array.from(document.querySelectorAll<HTMLElement>('.tab-bar > .tabs > tab-header:not(.cdk-drag-preview)'))
         this.watchHeaderStrip(headers)
         this.applied = this.needsHeaders()
+        // One ownership pass per sync, shared by the persisted record and the
+        // filtering below. It walks profiles, folders and workspace exclusions
+        // for every tab, and asking twice per sync doubled the cost of the one
+        // thing here that scales with the window's tab count.
+        const owners = new Map<BaseTabComponent, string|undefined>()
+        for (const tab of this.app.tabs) {
+            owners.set(tab, this.owner(tab))
+        }
         if (this.interacted) {
             // Records where each session belongs for the next start; see takeRestored().
             // Written before the header checks below, which may bail out on a transient DOM mismatch.
-            this.writeOwners()
+            this.writeOwners(owners)
         }
         // Native open/close animations can temporarily leave a different number of
         // headers. Assigning by index would then tag the wrong rows, so nothing is
@@ -593,7 +673,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             this.revealSelectedHeader(headers)
             return
         }
-        const visible = this.app.tabs.filter(tab => this.visible(tab))
+        const visible = this.app.tabs.filter(tab => this.visible(tab, owners))
         headers.forEach((header, index) => header.classList.toggle(HIDDEN_CLASS, !visible.includes(this.app.tabs[index])))
         const active = this.app.activeTab
         if (active && visible.includes(active)) {

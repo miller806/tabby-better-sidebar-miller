@@ -3,6 +3,26 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.26 (2026-11-02)
+
+- Workspace ownership is resolved once per sync instead of twice, and the
+  profile, folder and workspace-exclusion lookups behind it are cached until
+  the configuration changes. On a busy window (60 tabs, 12 workspaces with
+  exclusions) a sync went from 0.43 ms to 0.18 ms — it runs on every tab event,
+  every title change and every config save.
+- The SFTP view no longer keeps a timer running behind it: its 1s re-evaluation
+  now exists only while the panel is on screen. It ran inside the Angular zone,
+  so an idle SFTP view was forcing a full change-detection pass every second
+  over the profile tree the user was actually looking at.
+- Dragging in the tree no longer measures every rendered row on every mouse
+  move: the row under the pointer is found with one hit test, skipping the row
+  being dragged so a downward nest still resolves to the folder beneath it.
+  Resizing the sidebar stopped writing to `localStorage` per mouse move.
+- Smaller repeats: the profile status map is swapped in only when its contents
+  change, the SFTP row slice is reused between passes, a drag over a large
+  directory looks its target up instead of scanning the listing, and the
+  terminal-tag signature is a plain string instead of JSON.
+
 ## 1.0.25 (2026-11-02)
 
 - **`Ctrl-V` now uploads files copied in the OS file manager.** Copy in
