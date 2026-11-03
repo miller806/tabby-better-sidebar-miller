@@ -10,6 +10,13 @@ sidebar-plus-sftp-browser {
     overflow: hidden;
 }
 
+// The host takes focus on every click (that is what moves the keyboard out of
+// the terminal), so the ring a browser draws around a focused box would flash on
+// each row click. The panel already shows what is selected.
+sidebar-plus-sftp-browser:focus {
+    outline: none;
+}
+
 sidebar-plus-sftp-browser .sftp-toolbar,
 sidebar-plus-sftp-browser .sftp-filter-bar {
     flex: none;

@@ -37,6 +37,9 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
     private navigationDirection = 0
     private observedStrip?: Element
     private applied = false
+    /** When the header count last disagreed with `app.tabs`, and how long that is allowed to last. */
+    private mismatchSince: number|null = null
+    private static readonly MISMATCH_GRACE_MS = 1000
     private dragging = false
     private interacted = false
     private revealActive = false
@@ -566,12 +569,24 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             // Written before the header checks below, which may bail out on a transient DOM mismatch.
             this.writeOwners()
         }
-        // Native open/close animations can temporarily leave a different number of headers.
-        // Never assign tags by index until the DOM and app.tabs agree again.
+        // Native open/close animations can temporarily leave a different number of
+        // headers. Assigning by index would then tag the wrong rows, so nothing is
+        // assigned until the DOM and app.tabs agree again — and, crucially, nothing
+        // is *revealed* either: clearing the classes here is what made every tab of
+        // every workspace flash for a frame whenever one was closed. The classes
+        // already on screen describe the last consistent listing, which is exactly
+        // what should remain visible for the frame or two the animation takes.
         if (headers.length !== this.app.tabs.length) {
+            this.mismatchSince ??= Date.now()
+            if (Date.now() - this.mismatchSince < SidebarPlusWorkspaceTabsService.MISMATCH_GRACE_MS) {
+                return
+            }
+            // Still disagreeing well past any animation: the contract with the host
+            // has changed, and hiding tabs would be worse than showing them all.
             headers.forEach(h => h.classList.remove(HIDDEN_CLASS))
             return
         }
+        this.mismatchSince = null
         this.syncHeaderTags(headers)
         if (!this.enabled()) {
             headers.forEach(h => h.classList.remove(HIDDEN_CLASS))

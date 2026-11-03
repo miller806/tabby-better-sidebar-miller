@@ -3,6 +3,23 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.24 (2026-11-02)
+
+- Closing a tab no longer flashes every tab of every workspace: while the
+  header count and `app.tabs` disagree (open and close animations), the
+  visibility already on screen is kept instead of being cleared. The
+  fail-open guard rail still fires, but only once the mismatch outlasts a
+  second, which no animation does.
+- SFTP copy/paste now actually receive the keystrokes. Clicking in the panel
+  moves the keyboard into it, and the key handler runs in the capture phase:
+  the terminal's hidden textarea used to keep focus, so `Ctrl-C` and `Ctrl-V`
+  in the panel were swallowed by the field guard while the shell received a
+  real SIGINT. Typing anywhere outside the panel hands the keys back.
+- `Ctrl-C` / `Ctrl-X` / `Ctrl-V` stay available while a toolbar button has
+  focus; `Enter`, `Backspace` and `Delete` remain the button's own.
+- Regression test for the closing-tab flash, checked against the previous
+  behaviour.
+
 ## 1.0.23 (2026-11-02)
 
 - **Copy, cut and paste** in the SFTP browser, with `Ctrl-C` / `Ctrl-X` /

@@ -278,11 +278,31 @@ test('split tabs follow inherited group ownership as a whole', () => {
     f.service.setWorkspace('dev'); f.service.sync(); assert.equal(f.hidden(0), false); f.service.ngOnDestroy()
 })
 
-test('deleting a workspace and host header mismatch fail open', () => {
+test('deleting a workspace and a lasting header mismatch fail open', () => {
     const f = fixture(); f.add({ profile: { id: 'd' } }); f.service.sync(); assert.equal(f.hidden(0), true)
     f.config.store.sidebarPlus.workspaces = [{ id: 'pro' }]; f.service.sync(); assert.equal(f.hidden(0), false)
     f.config.store.sidebarPlus.workspaces.push({ id: 'dev' }); f.add({ profile: { id: 'p' } }); f.service.sync()
-    f.mismatch(); f.service.sync(); assert.equal(f.hidden(0), false); f.service.ngOnDestroy()
+    f.mismatch(); f.service.sync()
+    // Within the grace period the previous visibility is kept, not revealed; see
+    // the closing-tab test below. Past it, the guard rail still fails open.
+    assert.equal(f.hidden(0), true)
+    f.service.mismatchSince = Date.now() - 5000; f.service.sync()
+    assert.equal(f.hidden(0), false); f.service.ngOnDestroy()
+})
+
+test('closing a tab never flashes the other workspaces for a frame', () => {
+    const f = fixture(); f.app.ready$.next()
+    f.add({ profile: { id: 'p' } }); f.add({ profile: { id: 'd' } }); f.add({ profile: { id: 'p' } })
+    f.service.sync(); assert.equal(f.hidden(1), true)
+    // Tabby drops the tab from app.tabs first and lets the header animate out,
+    // so the counts disagree for a frame or two.
+    f.app.tabs.pop(); f.service.sync()
+    assert.equal(f.hidden(1), true)
+    assert.equal(f.hidden(0), false)
+    // The animation finishes, the counts agree again and nothing moved.
+    f.mismatch(); f.service.sync()
+    assert.equal(f.hidden(1), true); assert.equal(f.hidden(0), false)
+    f.service.ngOnDestroy()
 })
 
 test('tab-open events attach shared profiles to the current workspace', () => {

@@ -171,6 +171,10 @@ export interface SftpColumn {
 @Component({
     selector: 'sidebar-plus-sftp-browser',
     template: require('./sftpBrowser.component.pug'),
+    // Programmatically focusable, never tab-reachable: clicking a row pulls the
+    // keyboard into the panel (see `onDocumentMousedown`), and a plain div can
+    // only take focus with a `tabindex`.
+    host: { tabindex: '-1' },
 })
 export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implements OnDestroy, AfterViewChecked {
     /**
@@ -378,6 +382,12 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         this.platformSvc = platform
         this.editor = new SftpRemoteEditor(notices, editors, transfers, temp, (message, confirmLabel) => this.ask(message, confirmLabel), zone, i18n)
         this.dragOut = new SftpDragOut(notices, zone, transfers, temp, i18n)
+        // Capture phase, and registered by hand rather than through @HostListener:
+        // a `Ctrl-C` we handle has to be stopped *before* xterm's own keydown on the
+        // terminal's textarea, which sits below `document` in the bubble phase.
+        if (typeof document.addEventListener === 'function') {
+            this.zone.runOutsideAngular(() => document.addEventListener('keydown', this.onKeyDown, true))
+        }
     }
 
     /** The transfers helper shared with the editor and the drag-out — kept for routes started here. */
@@ -451,6 +461,9 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         // The one listener this component puts on `document` — a panel torn
         // down mid-gesture would otherwise leave it there for good.
         this.stopWatchingWindowExit()
+        if (typeof document.removeEventListener === 'function') {
+            document.removeEventListener('keydown', this.onKeyDown, true)
+        }
         // Belt and braces alongside `loadMoreSentinelRef`'s own teardown: a
         // component destroyed outright — the SSH tab closing, say — never
         // runs that setter with `undefined`, Angular just tears the view
@@ -2020,7 +2033,7 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
     ////// DELETE //////
     /**
      * Set for the duration of confirm-then-delete, from either trigger below.
-     * Without it, holding Delete re-fires `onDocumentKeydown` at keyboard
+     * Without it, holding Delete re-fires `onKeyDown` at keyboard
      * repeat rate while the confirm modal is up (focus lands on one of its
      * *buttons*, not an input, so the input/textarea check doesn't help), and
      * a second click on the context menu entry before the first delete
@@ -2195,7 +2208,14 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
 
     @HostListener('document:mousedown', ['$event'])
     onDocumentMousedown (event: MouseEvent): void {
+        // Focus moves into the panel, like any file manager: without this the
+        // terminal's hidden textarea keeps it, the keystrokes below are
+        // *targeted* at that textarea, and `Ctrl-C` would be swallowed by the
+        // field guard while the terminal received a real SIGINT.
         this.pointerInside = this.elementRef.nativeElement.contains(event.target as Node)
+        if (this.pointerInside) {
+            this.elementRef.nativeElement.focus({ preventScroll: true })
+        }
     }
 
     /**
@@ -2221,15 +2241,15 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
      * confirm-then-delete path: a single entry through the context menu's own
      * confirmation, several through the bulk one further down.
      */
-    @HostListener('document:keydown', ['$event'])
-    onDocumentKeydown (event: KeyboardEvent): void {
-        if (!this.handlesKeys() || event.altKey) {
+    private onKeyDown = (event: KeyboardEvent): void => {
+        if (event.altKey || !this.handlesKeys()) {
             return
         }
         const target = event.target as HTMLElement
-        // Anything that takes typing, and anything that answers to Enter on its
-        // own, keeps its keys: a focused toolbar button must press, not navigate.
-        if (target.closest('input, textarea, select, [contenteditable], button, a[href]')) {
+        const inPanel = this.elementRef.nativeElement.contains(target)
+        // A field of our own keeps every key, text copy included: the path input
+        // and the filter field are not a selection to copy files from.
+        if (inPanel && target.closest('input, textarea, select, [contenteditable]')) {
             return
         }
         // Shift is left alone on purpose: Tabby binds the terminal's own
@@ -2237,37 +2257,58 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         // break the pane next door.
         if ((event.ctrlKey || event.metaKey) && !event.shiftKey) {
             const key = event.key.toLowerCase()
-            if (key === 'c' || key === 'x') {
+            const act = key === 'c' ? () => this.copySelection(false)
+                : key === 'x' ? () => this.copySelection(true)
+                    : key === 'v' ? () => void this.pasteClipboard(this.path)
+                        : null
+            if (act) {
+                // Stopped in the capture phase: the terminal's own keydown would
+                // otherwise turn a file copy into a real SIGINT on the shell.
                 event.preventDefault()
-                this.copySelection(key === 'x')
-            } else if (key === 'v') {
-                event.preventDefault()
-                void this.pasteClipboard(this.path)
+                event.stopPropagation()
+                // Run back inside Angular: the listener was registered outside it
+                // to keep every other keystroke of the window from triggering a
+                // change detection pass, but these commands do redraw the panel.
+                this.zone.run(act)
+                return
             }
+        }
+        if (!inPanel) {
+            // The user is working somewhere else — a terminal, a dialog. The
+            // panel does not follow them: the next command belongs to that pane.
+            this.pointerInside = false
+            return
+        }
+        // A focused button or link answers to `Enter` itself, and a focused
+        // control is not a selection: those keys stay its own. The clipboard
+        // gestures above stay available there — copying files is not a
+        // button's business.
+        if (target.closest('button, a[href]')) {
             return
         }
         if (event.key === 'Enter') {
             event.preventDefault()
             if (!event.repeat) {
-                void this.openSelection()
+                this.zone.run(() => void this.openSelection())
             }
             return
         }
         if (event.key === 'Backspace') {
             if (this.canGoUp && !event.repeat) {
                 event.preventDefault()
-                this.goUp()
+                this.zone.run(() => this.goUp())
             }
             return
         }
         if (event.key !== 'Delete' || event.repeat || this.selection.size === 0 || this.deleteInFlight) {
             return
         }
+        event.preventDefault()
         const items = this.selectedItems()
         if (items.length === 1) {
-            void this.confirmAndDelete(items[0])
+            this.zone.run(() => void this.confirmAndDelete(items[0]))
         } else if (items.length > 1) {
-            void this.confirmAndDeleteSelection(items)
+            this.zone.run(() => void this.confirmAndDeleteSelection(items))
         }
     }
 

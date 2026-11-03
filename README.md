@@ -189,8 +189,10 @@ be **frozen** on one session so it stops following the focused tab.
   refused rather than overwritten, and a folder cannot be pasted into itself
 - **Keyboard navigation**: `Enter` opens the selected entry — folders navigate
   into them, files take the same edit round-trip as a double-click — and
-  `Backspace` goes up one level. Those keys only act while the panel is the
-  pane you last clicked in, so typing in a terminal never moves the listing
+  `Backspace` goes up one level. Clicking in the panel moves the keyboard into
+  it, and every one of those keys is released again as soon as you work
+  somewhere else, so typing in a terminal never moves the listing and `Ctrl-C`
+  there still reaches the shell
 - **Chunked loading** of large directory listings
 - **Double-click opens a file in a code editor**, never through the OS file
   association — so double-clicking an executable edits it instead of running it.
