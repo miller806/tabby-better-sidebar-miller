@@ -3,6 +3,16 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.31 (2026-11-02)
+
+- A transfer row now says **which server it belongs to** whenever that is not
+  the session on screen: a small badge next to the name, with the full label on
+  hover. Transfers from another tab keep running and stay listed — hiding them
+  would be the one way to lose sight of work that still needs the user — but
+  they no longer read as if they were happening in the session being looked at.
+  Rows of the current session are left unlabelled, since saying it on every line
+  would be noise.
+
 ## 1.0.30 (2026-11-02)
 
 - The **transfer list now lives at the bottom of the right-hand dock** while

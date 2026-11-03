@@ -120,6 +120,22 @@ sidebar-plus-transfers {
         min-width: 0;
     }
 
+    // The session chip: a small, quiet badge, because it is an annotation and
+    // the name is what the row is about. Capped and ellipsised — a long
+    // "user@host — prod cluster" label must not push the figures off the row.
+    .transfer-session {
+        flex: 0 1 auto;
+        max-width: 7rem;
+        padding: 0 .3rem;
+        border-radius: .6rem;
+        background-color: var(--theme-secondary);
+        color: var(--theme-secondary-fg);
+        font-size: .62rem;
+        line-height: 1.15;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     // Everything besides the name holds its size and never wraps — a row is one
     // line, always.
     .transfer-arrow,

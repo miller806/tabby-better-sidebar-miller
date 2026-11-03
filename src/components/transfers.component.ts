@@ -29,6 +29,22 @@ export class SidebarPlusTransfersComponent {
         private i18n: SidebarPlusI18nService,
     ) { }
 
+    /**
+     * The session the user is looking at, or '' when none is focused.
+     *
+     * Rows whose own session differs carry a label saying so — see the
+     * template. Their transfers keep running, and hiding them would be the one
+     * way to lose sight of a transfer that still needs the user.
+     */
+    get currentSession (): string {
+        return this.transfers.currentSessionLabel
+    }
+
+    /** Whether this row belongs to a session other than the one on screen. */
+    isOtherSession (entry: TransferEntry): boolean {
+        return !!entry.sessionLabel && entry.sessionLabel !== this.currentSession
+    }
+
     toggle (event: MouseEvent): void {
         event.preventDefault()
         this.collapsed = !this.collapsed

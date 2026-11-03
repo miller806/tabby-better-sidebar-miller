@@ -41,6 +41,14 @@
             //- runs a great many passes (piège #54). The registry's tick is what
             //- keeps them fresh.
             span.transfer-name.no-wrap.me-auto {{ entry.name }}
+            //- Which server this one is going to, but only when it is not the
+            //- server on screen: labelling every row with the session the user
+            //- is already in would be noise on the common case. The full name
+            //- is always in the row's tooltip.
+            span.transfer-session.no-wrap(
+                *ngIf='isOtherSession(entry)',
+                [title]="'This transfer belongs to another session: {label}' | translate:{ label: entry.sessionLabel }"
+            ) {{ entry.sessionLabel }}
             span.transfer-speed(*ngIf='entry.state === "active"') {{ entry.speedLabel }}
             span.transfer-figure(*ngIf='entry.state === "active"') {{ entry.percent }}%
             span.transfer-figure(*ngIf='entry.state === "done"') {{ entry.sizeLabel }}

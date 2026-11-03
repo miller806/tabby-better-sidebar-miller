@@ -2567,6 +2567,10 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
         // the per-split forward scan that return exists to skip, and the
         // transfer arrows are a property of the profile row itself — they do
         // not depend on the "Sessions actives"/"Tunnels" blocks being shown.
+        // Published for the transfer list, which marks the rows that belong to
+        // another session — the one thing a mixed list could not say before.
+        this.transfers.currentSessionLabel = this.transferSessionLabel(this.resolveFocusedTab())
+
         const sessionLabelToProfileId = new Map<string, string>()
         for (const tab of getAllOpenTabs(this.app)) {
             if (!isSSHTab(tab) || !isLiveSSHTab(tab)) {
@@ -3034,6 +3038,22 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
     }
 
     /** The pane the user is actually looking at: `app.activeTab` is the split, not the session inside it. */
+    /**
+     * The label a transfer carries, from a tab: same precedence as
+     * `sftpPanel.component.ts`'s own assignment when the panel binds a session.
+     *
+     * Stated once here because the transfer list compares against it: two
+     * copies of the rule would drift, and the symptom would be a row labelled
+     * "another session" while the user is looking straight at it.
+     */
+    private transferSessionLabel (tab: BaseTabComponent|null): string {
+        if (!tab) {
+            return ''
+        }
+        const profile = (tab as unknown as ProfileBackedTab).profile
+        return tab.customTitle || tab.topmostParent?.customTitle || profile?.name || tab.title || ''
+    }
+
     private resolveFocusedTab (): BaseTabComponent|null {
         const active = this.app.activeTab
         return active instanceof SplitTabComponent ? active.getFocusedTab() : active

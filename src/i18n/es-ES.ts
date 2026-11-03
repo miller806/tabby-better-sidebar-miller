@@ -146,6 +146,7 @@ const es_ES: Record<string, string> = {
     'Toggle the SFTP panel': 'Mostrar u ocultar el panel SFTP',
     'The clipboard holds no files': 'El portapapeles no contiene archivos',
     'This folder is empty.': 'Esta carpeta está vacía.',
+    'This transfer belongs to another session: {label}': 'Esta transferencia pertenece a otra sesión: {label}',
     '{name} uploaded to {destination}': '{name} subido a {destination}',
     '{count} items uploaded to {destination}': '{count} elementos subidos a {destination}',
     'Could not upload {name}: {error}': 'No se pudo subir {name}: {error}',

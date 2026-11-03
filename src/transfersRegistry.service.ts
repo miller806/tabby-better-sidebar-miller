@@ -147,6 +147,15 @@ export class SidebarPlusTransfersService {
     entries: TransferEntry[] = []
     /** What the header badge shows — a field, not a getter, for the reason given above. */
     summary = ''
+    /**
+     * The session on screen, as its transfers label themselves.
+     *
+     * Set by the sidebar's 2s pass from the focused tab, using the very same
+     * precedence the SFTP panel stamps on a transfer — so a row can compare the
+     * two and say "this one is going somewhere else" without either side
+     * guessing at the other's naming.
+     */
+    currentSessionLabel = ''
     /** The full breakdown, on hover: the badge itself only has room for what matters now. */
     summaryTitle = ''
     private counter = 0
