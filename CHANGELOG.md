@@ -3,6 +3,15 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.28 (2026-11-02)
+
+- The right-hand SFTP dock now uses the theme instead of its own greys: the
+  sidebar's surface colour, the theme's divider for its left edge, and the
+  panel's own tool-button idiom for the rail and its chevron. The rail is
+  transparent until hovered rather than a permanent grey band, and the panel
+  gets the inset it used to inherit from the sidebar's content box — flush
+  against the window edge is what made it read as bolted on.
+
 ## 1.0.27 (2026-11-02)
 
 - The SFTP view is now a **full-height panel on the right of the window**
