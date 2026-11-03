@@ -3,6 +3,23 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.27 (2026-11-02)
+
+- The SFTP view is now a **full-height panel on the right of the window**
+  instead of a mode that replaced the profile tree. The sidebar keeps the tree,
+  the terminal keeps the middle, and the file table gets a width its columns can
+  live with. Tabby resizes the terminals itself (its frontends observe their own
+  host), so nothing has to be nudged.
+- It is shown and hidden from a new button in Tabby's tab bar, from the existing
+  SFTP button in the sidebar, and from a chevron at the top of its own left rail
+  — which doubles as the resize handle, so the collapse affordance costs no
+  header row. A collapsed dock is hidden, not destroyed: its panel cache (one
+  SFTP channel per session, per-tab directory memory) survives.
+- **Settings → Better Sidebar → SFTP view → Position** switches back to the old
+  sidebar placement; the sidebar then behaves exactly as before, tree hidden
+  while the files are showing. Existing configurations default to the dock,
+  since that is the placement this release is about.
+
 ## 1.0.26 (2026-11-02)
 
 - Workspace ownership is resolved once per sync instead of twice, and the

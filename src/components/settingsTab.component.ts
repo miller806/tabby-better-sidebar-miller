@@ -199,6 +199,21 @@ export class SidebarPlusSettingsTabComponent {
     get lblSftp (): string { return this.i18n.t('SFTP view') }
     get lblSftpHint (): string { return this.i18n.t('One SFTP channel per session actually browsed.') }
     get lblSftpDesc (): string { return this.i18n.t('The SFTP tab of the sidebar and its panel.') }
+    get lblPlacement (): string { return this.i18n.t('Position') }
+    get lblPlacementHint (): string { return this.i18n.t('A full-height column leaves room for the columns; the sidebar keeps the profile tree visible beside it.') }
+    get lblPlacementRight (): string { return this.i18n.t('Right side panel') }
+    get lblPlacementSidebar (): string { return this.i18n.t('Sidebar, in place of the profiles') }
+
+    /** Where the SFTP view lives, `right` unless the configuration says otherwise. */
+    get sftpPlacement (): string {
+        return this.config.store.sidebarPlus?.sftpPlacement === 'sidebar' ? 'sidebar' : 'right'
+    }
+
+    async setSftpPlacement (value: string): Promise<void> {
+        this.config.store.sidebarPlus.sftpPlacement = value === 'sidebar' ? 'sidebar' : 'right'
+        await this.config.save()
+    }
+
     get lblEditor (): string { return this.i18n.t('Remote file editor') }
     get lblEditorHint (): string { return this.i18n.t('The file is copied, edited, then sent back to the server.') }
     get lblEditorDesc (): string { return this.i18n.t('Program opened on double-click. Empty, Windows decides.') }

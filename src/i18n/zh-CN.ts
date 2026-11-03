@@ -136,6 +136,13 @@ const zh_CN: Record<string, string> = {
     '{succeeded} copied, {failed} failed': '成功 {succeeded} 项，失败 {failed} 项',
     'Copied across sessions — the originals were left in place': '已跨会话复制——原文件保留在原位',
     'Paste files copied here, or copied in your file manager': '粘贴在这里复制的文件，或在你文件管理器中复制的文件',
+    'Position': '位置',
+    'A full-height column leaves room for the columns; the sidebar keeps the profile tree visible beside it.':
+        '整高右栏能给各列留出空间；放在侧边栏则保留左侧服务器树可见。',
+    'Right side panel': '右侧独立栏',
+    'Sidebar, in place of the profiles': '侧边栏（取代服务器树）',
+    'Hide the SFTP panel': '隐藏 SFTP 面板',
+    'Toggle the SFTP panel': '显示/隐藏 SFTP 面板',
     'The clipboard holds no files': '剪贴板里没有文件',
     '{name} uploaded to {destination}': '{name} 已上传到 {destination}',
     '{count} items uploaded to {destination}': '已将 {count} 项上传到 {destination}',

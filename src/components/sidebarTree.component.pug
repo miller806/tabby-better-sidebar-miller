@@ -2,7 +2,11 @@
     //- Kept as the very first row, above the workspace bar, so it stays put
     //- when switching modes instead of sliding around under the cursor.
     .view-mode-bar.d-flex.align-items-center
+        //- Two tabs while the view replaces this tree, one toggle while it is
+        //- docked at the right: there is nothing to switch away from then, and
+        //- the tree stays exactly where it is.
         a.view-mode-tab(
+            *ngIf='!sftpInDock',
             [class.active]='!sftpMode',
             (click)='setSftpMode(false)',
             [title]="'Profiles' | translate",
@@ -13,7 +17,7 @@
         a.view-mode-tab(
             *ngIf='showSftp',
             [class.active]='sftpMode',
-            (click)='setSftpMode(true)',
+            (click)='toggleSftp()',
             [title]="'SFTP of the active session' | translate",
             href='#'
         )
@@ -27,7 +31,7 @@
     //- encore chargé) est simplement sauté par recentProfiles, pas retiré de
     //- l'historique. Vue Profils seulement, comme les tunnels : la fiche parle
     //- de relance, pas de suivi de ce qui tourne.
-    .recent-profiles(*ngIf='showRecentProfiles && !sftpMode && recentProfiles.length')
+    .recent-profiles(*ngIf='showRecentProfiles && !sftpHidesTree && recentProfiles.length')
         a.active-sessions-header((click)='toggleRecentProfiles()', href='#')
             .fa.fa-fw.fas.me-1(
                 [class.fa-chevron-down]='!recentProfilesCollapsed',
@@ -56,7 +60,7 @@
     //- sessions block above, this one is hidden in SFTP mode: the user asked
     //- for it explicitly (2026-07-30), the SFTP tab having no use for the
     //- forwarding state.
-    .active-tunnels(*ngIf='showTunnels && !sftpMode && activeTunnels.length')
+    .active-tunnels(*ngIf='showTunnels && !sftpHidesTree && activeTunnels.length')
         a.active-sessions-header((click)='toggleActiveTunnels()', href='#')
             .fa.fa-fw.fas.me-1(
                 [class.fa-chevron-down]='!activeTunnelsCollapsed',
@@ -119,7 +123,7 @@
     //- costs one channel per session actually browsed again — the price of the
     //- block genuinely being off rather than merely invisible.
     sidebar-plus-sftp.flex-grow-1(
-        *ngIf='showSftp',
+        *ngIf='showSftp && !sftpInDock',
         [hidden]='!sftpMode',
         [active]='sftpMode',
         (closed)='setSftpMode(false)'
@@ -144,7 +148,7 @@
     //- stays reachable with the workspaces switched off — the strip then
     //- holds it alone. In 'dropdown' mode too it keeps a tab of its own, here,
     //- above the compact selector.
-    .workspace-bar.d-flex.align-items-center.flex-wrap(*ngIf='!sftpMode && (showActiveToggle || (showWorkspaces && workspaceSelectorMode === "tabs"))')
+    .workspace-bar.d-flex.align-items-center.flex-wrap(*ngIf='!sftpHidesTree && (showActiveToggle || (showWorkspaces && workspaceSelectorMode === "tabs"))')
         a.workspace-tab.workspace-tab-active-only(
             *ngIf='showActiveToggle',
             [class.active]='activeOnly',
@@ -189,7 +193,7 @@
     //- (same icon/dot rendering a tab would use), the full list lives in the
     //- popup opened by openWorkspaceSwitcher() below.
     a.workspace-bar-compact.d-flex.align-items-center(
-        *ngIf='showWorkspaces && !sftpMode && workspaceSelectorMode === "dropdown"',
+        *ngIf='showWorkspaces && !sftpHidesTree && workspaceSelectorMode === "dropdown"',
         (click)='openWorkspaceSwitcher($event)',
         [title]="activeWorkspace?.name ?? ('All' | translate)",
         href='#'
@@ -199,7 +203,7 @@
         .workspace-color-dot(*ngIf='activeWorkspace?.color', [style.background-color]='activeWorkspace?.color')
         .fa.fa-fw.fas.fa-chevron-down.ms-1
 
-    .d-flex.align-items-center.gap-1.mb-1(*ngIf='showFilter && !sftpMode')
+    .d-flex.align-items-center.gap-1.mb-1(*ngIf='showFilter && !sftpHidesTree')
         //- `#filterInput=''`, not `#filterInput`: in pug a leading `#` is id
             syntax, so an Angular template reference has to be written as a
             quoted attribute to survive compilation. Read by @ViewChild.
@@ -239,7 +243,7 @@
     //- from one profile on: the count is the only statement of how many rows
     //- are held, since the rows themselves may have scrolled out of sight.
     //- Doubles as the transient confirmation once a move lands.
-    .selection-bar(*ngIf='(selectionActive || selectionNotice) && !sftpMode')
+    .selection-bar(*ngIf='(selectionActive || selectionNotice) && !sftpHidesTree')
         .d-flex.align-items-center(*ngIf='selectionNotice')
             .fa.fa-fw.fas.fa-check.me-2
             span.me-auto {{ selectionNotice }}
@@ -250,7 +254,7 @@
                     .fa.fa-fw.fas.fa-xmark
             .selection-hint {{ 'Drag the selection, or right-click the destination folder' | translate }}
 
-    .hidden-items-panel(*ngIf='showHiddenPanel && !sftpMode')
+    .hidden-items-panel(*ngIf='showHiddenPanel && !sftpHidesTree')
         .text-muted.small(*ngIf='!hiddenGroupsInWorkspace.length && !hiddenProfilesInWorkspace.length') {{ 'No hidden items in this workspace.' | translate }}
         .hidden-item(*ngFor='let g of hiddenGroupsInWorkspace')
             profile-icon.me-2([icon]='g.icon ?? "far fa-folder"', [color]='g.color')
@@ -263,7 +267,7 @@
             a.action((click)='restoreProfileInWorkspace(p)', [title]="'Show again' | translate", href='#')
                 .fa.fa-fw.fas.fa-eye
 
-    .sidebar-plus-tree.flex-grow-1(#treeScroll, *ngIf='!showHiddenPanel && !sftpMode', (contextmenu)='onSidebarContextMenu($event)')
+    .sidebar-plus-tree.flex-grow-1(#treeScroll, *ngIf='!showHiddenPanel && !sftpHidesTree', (contextmenu)='onSidebarContextMenu($event)')
         .d-flex.flex-column.p-2.sidebar-plus-tree-container(
             cdkDropList,
             id='groups-root',

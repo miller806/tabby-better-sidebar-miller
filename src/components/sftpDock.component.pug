@@ -1,0 +1,18 @@
+//- The dock's own chrome, and nothing else: one narrow rail on the left that
+//- both resizes and collapses, then the SFTP view itself. Keeping the rail out
+//- of the panel's template is what lets the panel be hosted in the sidebar
+//- unchanged — the layout of the two hosts is the only difference between them.
+.sftp-dock-rail((mousedown)='startResize($event)')
+    //- Stopped at mousedown: the rail starts a resize, this button does not.
+    button.sftp-dock-collapse(
+        type='button',
+        (mousedown)='$event.stopPropagation()',
+        (click)='hide()',
+        [title]="'Hide the SFTP panel' | translate"
+    )
+        .fa.fa-fw.fas.fa-chevron-right
+
+sidebar-plus-sftp.flex-grow-1(
+    [active]='visible',
+    (closed)='hide()'
+)

@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { DragDropModule } from '@angular/cdk/drag-drop'
-import TabbyCoreModule, { ConfigProvider, HotkeyProvider } from 'tabby-core'
+import TabbyCoreModule, { ConfigProvider, HotkeyProvider, ToolbarButtonProvider } from 'tabby-core'
 import { SettingsTabProvider } from 'tabby-settings'
 
 import { SidebarPlusTreeComponent } from './components/sidebarTree.component'
@@ -18,11 +18,13 @@ import { IconPickerModalComponent } from './components/iconPickerModal.component
 import { SidebarPlusHostPanelComponent } from './components/hostPanel.component'
 import { SidebarPlusSettingsTabComponent } from './components/settingsTab.component'
 import { SidebarPlusTransfersComponent } from './components/transfers.component'
+import { SidebarPlusSftpDockComponent } from './components/sftpDock.component'
 import { SidebarPlusConfigProvider } from './configProvider'
 import { SidebarPlusSettingsTabProvider } from './settings'
 import { SidebarPlusWorkspaceTabsService } from './workspaceTabs.service'
 import { SidebarPlusMountService } from './mount.service'
 import { SidebarPlusHotkeyProvider, SidebarPlusHotkeyService } from './hotkeys'
+import { SidebarPlusSftpToolbarProvider } from './toolbar'
 import { SidebarPlusTempFilesService } from './tempFiles.service'
 import { SidebarPlusI18nService } from './i18n'
 import { BetterPanelContribution, SIDEBAR_PANEL_TOKEN } from './betterPanel'
@@ -50,6 +52,7 @@ const SIDEBAR_PANEL_CONTRIBUTION: BetterPanelContribution = {
         { provide: ConfigProvider, useClass: SidebarPlusConfigProvider, multi: true },
         { provide: SettingsTabProvider, useClass: SidebarPlusSettingsTabProvider, multi: true },
         { provide: HotkeyProvider, useClass: SidebarPlusHotkeyProvider, multi: true },
+        { provide: ToolbarButtonProvider, useClass: SidebarPlusSftpToolbarProvider, multi: true },
         { provide: SIDEBAR_PANEL_TOKEN, useValue: SIDEBAR_PANEL_CONTRIBUTION },
     ],
     declarations: [
@@ -66,6 +69,7 @@ const SIDEBAR_PANEL_CONTRIBUTION: BetterPanelContribution = {
         SidebarPlusHostPanelComponent,
         SidebarPlusSettingsTabComponent,
         SidebarPlusTransfersComponent,
+        SidebarPlusSftpDockComponent,
     ],
 })
 export default class SidebarPlusModule {

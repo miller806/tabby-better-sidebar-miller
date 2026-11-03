@@ -166,9 +166,16 @@ separate bundle, so they cost nothing at startup.
 
 ## 📂 SFTP
 
-The browser replaces the profile tree in the sidebar's own space and follows
-whichever SSH tab has focus — each tab remembers where it was, and the view can
-be **frozen** on one session so it stops following the focused tab.
+The browser is a **full-height panel on the right of the window** by default, so
+the profile tree on the left and the terminal in the middle both stay where they
+are, and the file table gets the width its columns need. A toggle in Tabby's tab
+bar and one in the sidebar show and hide it; the narrow rail on its left edge
+resizes it, and the chevron at the top of that rail collapses it. **Settings →
+Better Sidebar → SFTP view → Position** moves it back into the sidebar, where it
+replaces the profile tree as earlier versions did.
+
+It follows whichever SSH tab has focus — each tab remembers where it was, and
+the view can be **frozen** on one session so it stops following the focused tab.
 
 - **Configurable columns** (size, date, octal and long permissions, type,
   extension), folders-first sorting, hidden files toggle, zebra striping

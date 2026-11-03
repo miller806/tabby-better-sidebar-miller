@@ -2,7 +2,8 @@ import './hostChrome.scss'
 import { ApplicationRef, ComponentRef, EnvironmentInjector, Injectable, createComponent } from '@angular/core'
 import { AppService, ConfigService, NotificationsService } from 'tabby-core'
 import { SidebarPlusTreeComponent } from './components/sidebarTree.component'
-import { checkHost } from './hostCompat'
+import { SidebarPlusSftpDockComponent } from './components/sftpDock.component'
+import { checkHost, hostSupports } from './hostCompat'
 import { SidebarPlusI18nService } from './i18n'
 import { SidebarPlusVisibilityService } from './visibility.service'
 
@@ -12,6 +13,8 @@ const HIDE_NATIVE_TRANSFERS_CLASS = 'sidebar-plus-hide-native-transfers'
 @Injectable({ providedIn: 'root' })
 export class SidebarPlusMountService {
     private componentRef: ComponentRef<SidebarPlusTreeComponent>|null = null
+    /** The right-hand SFTP dock, when the configuration places the view there. */
+    private dockRef: ComponentRef<SidebarPlusSftpDockComponent>|null = null
 
     /**
      * Whether the host failed a precondition that leaves nothing to mount.
@@ -94,6 +97,7 @@ export class SidebarPlusMountService {
         // readout of a transfer at all, including transfers started by the
         // native panel or another plugin, which our registry only ever
         // mirrored. The setting keeps its value; only its effect is suspended.
+        this.syncDock(enabled)
         const sp = this.config.store.sidebarPlus
         const panelShown = (sp?.showSftp ?? true) && (sp?.showTransfers ?? true)
         const hide = enabled && panelShown && (sp?.hideNativeTransfersMenu ?? true)
@@ -148,6 +152,55 @@ export class SidebarPlusMountService {
         this.appRef.detachView(this.componentRef.hostView)
         this.componentRef.destroy()
         this.componentRef = null
+    }
+
+    /**
+     * Mounts or retires the right-hand SFTP dock.
+     *
+     * Last child of `.window.h-100.d-flex`, where the sidebar is the first: that
+     * element is Tabby's own row, so a dock appended to it sits to the right of
+     * everything — tab bar included — and the terminal in the middle resizes
+     * itself, since its frontend observes its own host with a ResizeObserver.
+     *
+     * One host at a time is the rule, not an optimisation: the panel behind it
+     * caches one SFTP channel per session and nothing would close a second one.
+     */
+    private syncDock (enabled: boolean): void {
+        const sp = this.config.store.sidebarPlus
+        const want = enabled
+            && (sp?.sftpPlacement !== 'sidebar')
+            && (sp?.showSftp ?? true)
+            && hostSupports('sftp-panel')
+        if (!want) {
+            this.unmountDock()
+            return
+        }
+        if (this.dockRef) {
+            return
+        }
+        const container = document.querySelector('.window.h-100.d-flex')
+        if (!container) {
+            return
+        }
+        this.dockRef = createComponent(SidebarPlusSftpDockComponent, {
+            environmentInjector: this.environmentInjector,
+        })
+        this.appRef.attachView(this.dockRef.hostView)
+        container.appendChild(this.rootNodeOfComponent(this.dockRef))
+    }
+
+    private unmountDock (): void {
+        if (!this.dockRef) {
+            return
+        }
+        this.rootNodeOfComponent(this.dockRef).remove()
+        this.appRef.detachView(this.dockRef.hostView)
+        this.dockRef.destroy()
+        this.dockRef = null
+    }
+
+    private rootNodeOfComponent<T> (ref: ComponentRef<T>): HTMLElement {
+        return (ref.hostView as unknown as { rootNodes: HTMLElement[] }).rootNodes[0]
     }
 
     private rootNodeOf (ref: ComponentRef<SidebarPlusTreeComponent>): HTMLElement {

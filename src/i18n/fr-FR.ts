@@ -162,6 +162,13 @@ const fr_FR: Record<string, string> = {
         'Copié entre sessions — les originaux ont été laissés en place',
     'Paste files copied here, or copied in your file manager':
         'Coller les fichiers copiés ici, ou ceux copiés dans votre gestionnaire de fichiers',
+    'Position': 'Emplacement',
+    'A full-height column leaves room for the columns; the sidebar keeps the profile tree visible beside it.':
+        'Une colonne pleine hauteur laisse de la place aux colonnes ; dans la barre latérale, l’arbre des profils reste visible à côté.',
+    'Right side panel': 'Panneau latéral droit',
+    'Sidebar, in place of the profiles': 'Barre latérale, à la place des profils',
+    'Hide the SFTP panel': 'Masquer le panneau SFTP',
+    'Toggle the SFTP panel': 'Afficher ou masquer le panneau SFTP',
     'The clipboard holds no files': 'Le presse-papiers ne contient aucun fichier',
     '{name} uploaded to {destination}': '{name} envoyé vers {destination}',
     '{count} items uploaded to {destination}': '{count} éléments envoyés vers {destination}',

@@ -115,3 +115,46 @@ test('the clipboard keeps its entries, its cut flag and its source session', () 
     assert.equal(clipboard.cut, false)
     assert.equal(clipboard.isFrom(source), false)
 })
+
+/**
+ * The placement service is what keeps the SFTP view in exactly one host: the
+ * dock at the right of the window, or the sidebar it replaces. The default
+ * matters — an older config has no `sftpPlacement` at all.
+ */
+function loadView (sidebarPlus) {
+    const exports = {}
+    const context = {
+        exports,
+        require: name => {
+            if (name === '@angular/core') {
+                return { Injectable: () => target => target }
+            }
+            if (name === 'tabby-core') {
+                return { ConfigService: class {} }
+            }
+            return {}
+        },
+    }
+    const js = ts.transpileModule(fs.readFileSync('src/sftpView.service.ts', 'utf8'), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, experimentalDecorators: true },
+    }).outputText
+    vm.runInNewContext(js, context)
+    return new exports.SidebarPlusSftpViewService({ store: { sidebarPlus } })
+}
+
+test('the SFTP view defaults to the right-hand dock, and can be asked for the sidebar', () => {
+    const docked = loadView({})
+    assert.equal(docked.placement, 'right')
+    assert.equal(docked.inDock, true)
+    assert.equal(docked.visible, false)
+    docked.toggle()
+    assert.equal(docked.visible, true)
+    docked.hide()
+    assert.equal(docked.visible, false)
+    docked.show()
+    assert.equal(docked.visible, true)
+
+    const sidebar = loadView({ sftpPlacement: 'sidebar' })
+    assert.equal(sidebar.placement, 'sidebar')
+    assert.equal(sidebar.inDock, false)
+})

@@ -29,6 +29,7 @@ import {
 import { SettingsTabComponent } from 'tabby-settings'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
 import { SidebarPlusWorkspaceTabsService } from '../workspaceTabs.service'
+import { SidebarPlusSftpViewService } from '../sftpView.service'
 import { SidebarPlusSettingsTabComponent } from './settingsTab.component'
 import { SidebarPlusSftpComponent } from './sftpPanel.component'
 import { SnippetsModalComponent, SnippetsModalResult } from './snippetsModal.component'
@@ -252,10 +253,30 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
      * (2026-08-01): the sidebar always comes back on Profils. The SFTP view
      * only makes sense next to the session it was opened for, and that session
      * is gone after a restart — landing in it meant switching back by hand
-     * every single time. The toggle stays session-local state, held in this
-     * field alone.
+     * every single time. The toggle stays session-local state.
+     *
+     * Delegated to the shared view service rather than held in this field alone:
+     * with the view docked at the right of the window, this component is no
+     * longer the only writer — the dock's own collapse button and the tab bar's
+     * toggle flip it too, and only one of the two hosts may hold the panel.
      */
-    sftpMode = false
+    get sftpMode (): boolean {
+        return this.sftpView.visible
+    }
+
+    set sftpMode (value: boolean) {
+        this.sftpView.visible = value
+    }
+
+    /** True when the view is docked at the right of the window instead of replacing this tree. */
+    get sftpInDock (): boolean {
+        return this.sftpView.inDock
+    }
+
+    /** Whether this sidebar is currently hidden behind the SFTP view — only ever in the sidebar placement. */
+    get sftpHidesTree (): boolean {
+        return this.sftpMode && !this.sftpInDock
+    }
 
     /**
      * Groups (isTemplate/blacklist already filtered, like profileGroups) but
@@ -517,6 +538,7 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
         private profilesService: ProfilesService,
         private app: AppService,
         private workspaceTabs: SidebarPlusWorkspaceTabsService,
+        private sftpView: SidebarPlusSftpViewService,
         private tabsService: TabsService,
         private notifications: NotificationsService,
         private ngbModal: NgbModal,
@@ -1982,6 +2004,11 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
     }
 
     ////// SFTP VIEW //////
+    /** The toolbar button's job: a view toggle, whatever the placement. */
+    toggleSftp (): void {
+        this.setSftpMode(!this.sftpMode)
+    }
+
     setSftpMode (on: boolean): void {
         if (on && !this.showSftp) {
             return

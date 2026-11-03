@@ -132,6 +132,10 @@ export class SidebarPlusConfigProvider extends ConfigProvider {
             // the name column is always shown and never listed here. See
             // SidebarPlusSftpBrowserComponent.AVAILABLE_COLUMNS for the ids.
             sftpColumns: ['size', 'date', 'mode'] as string[],
+            // Where the SFTP view lives: a full-height dock at the right of the
+            // window (default — a file table needs the room), or the sidebar
+            // position it used to occupy. See sftpView.service.ts.
+            sftpPlacement: 'right' as 'right'|'sidebar',
             // Editor a double-clicked remote file opens in — never the OS
             // association, which would *run* an executable instead of editing
             // it. Empty until the first double-click asks for one (or the
