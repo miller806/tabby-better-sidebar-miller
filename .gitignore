@@ -12,3 +12,6 @@ CLAUDE.md
 
 # Config du validateur .AIRules : outil de poste, comme chez le plugin frère
 .htmlvalidate.json
+
+# IDE project files
+.openidea/
