@@ -112,13 +112,16 @@ body.sidebar-plus-sftp-open .tab-bar .btn-tab-bar:has(.sidebar-plus-dock-icon) {
     box-shadow: inset 0 -2px 0 var(--theme-primary);
 }
 
-// Every toolbar button in one two-row cluster at the far right.
+// Every toolbar button in one cluster at the far right.
 //
 // Tabby puts one `.btn-group` before its drag spacer and one after it, so the
 // left group eats into the strip: with an icon per installed plugin, that is
 // real estate taken from the tabs. `order` moves that group next to the right
-// one without touching the DOM, and the two groups become one grid two rows
-// tall — half the width each button had, still inside the tab bar's height.
+// one without touching the DOM — no plugin's button is lost or re-registered —
+// and the drag spacer keeps the width that used to hold them.
+//
+// One row, not two: the tab bar is `--tabs-height` tall, and splitting that into
+// two rows of icons left them too small to hit or recognise.
 body.sidebar-plus-toolbar-grouped .tab-bar {
     // Stated for every child on purpose: once one sibling has an `order`, the
     // ones left at 0 jump to the front, and the whole bar reorders itself.
@@ -131,36 +134,21 @@ body.sidebar-plus-toolbar-grouped .tab-bar {
     > window-controls,
     > .window-controls-spacer { order: 5; }
 
+    // The wrapper each provider's button arrives in: `display: contents` hands
+    // the button itself to the row instead of nesting a flex box of its own.
     > .btn-group {
-        flex: 0 0 auto;
-        display: grid;
-        grid-template-columns: repeat(2, auto);
-        grid-auto-rows: calc((var(--tabs-height) - 4px) / 2);
-        align-content: center;
-        height: var(--tabs-height);
-        background: transparent;
-
-        // The wrapper each provider's button arrives in: `display: contents`
-        // hands the button itself to the grid instead of nesting a flex box.
         > .d-flex { display: contents; }
-
-        .btn-tab-bar {
-            height: 100%;
-            padding: 0 5px;
-
-            > svg,
-            > i {
-                width: 13px;
-                height: 13px;
-                font-size: 12px;
-            }
-        }
     }
 
-    // One divider, on the far side of the cluster: the tabs end, the buttons
-    // begin. Without it the two rows read as more tabs.
+    // One divider, on the tab side of the cluster: the tabs end, the buttons
+    // begin.
     > .btn-group:has(+ .btn-space) {
         border-right: 1px solid var(--theme-secondary);
+        padding-right: 4px;
+    }
+
+    > .btn-space + .btn-group {
+        padding-left: 4px;
     }
 }
 

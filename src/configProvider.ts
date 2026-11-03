@@ -138,8 +138,8 @@ export class SidebarPlusConfigProvider extends ConfigProvider {
             tabWidth: 'compact' as 'default'|'compact'|'tight',
             // Tab bar icons: `inline` is Tabby's own layout — one group either
             // side of the strip. `grouped` collects every provider's button at
-            // the far right, two rows tall, which gives the strip the width the
-            // left group was using. See hostChrome.scss.
+            // the far right, in a single row, which gives the strip the width
+            // the left group was using. See hostChrome.scss.
             tabBarButtons: 'grouped' as 'inline'|'grouped',
             sftpColumns: ['size', 'date', 'mode'] as string[],
             // Where the SFTP view lives: a full-height dock at the right of the

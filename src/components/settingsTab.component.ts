@@ -217,7 +217,7 @@ export class SidebarPlusSettingsTabComponent {
     }
 
     get lblToolbar (): string { return this.i18n.t('Tab bar buttons') }
-    get lblToolbarHint (): string { return this.i18n.t('Grouped collects every button at the far right, two rows tall, and leaves that width to the tabs.') }
+    get lblToolbarHint (): string { return this.i18n.t('Grouped collects every button at the far right and leaves that width to the tabs.') }
     get lblToolbarInline (): string { return this.i18n.t('Tabby default (either side)') }
     get lblToolbarGrouped (): string { return this.i18n.t('Grouped on the right') }
 

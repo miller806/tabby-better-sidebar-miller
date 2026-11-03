@@ -3,6 +3,14 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.35 (2026-11-02)
+
+- The grouped tab-bar buttons are **one row again**. Two rows inside
+  `--tabs-height` left every icon at 13px and half its hit area: recognisable by
+  shape only, and awkward to click. The win that matters survives: the left group
+  still no longer takes width from the tab strip, so the tabs keep the room it
+  was using. Same buttons, icons back at their normal size.
+
 ## 1.0.34 (2026-11-02)
 
 - **All tab-bar buttons now sit in one cluster at the far right, two rows

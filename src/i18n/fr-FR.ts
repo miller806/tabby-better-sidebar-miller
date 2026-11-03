@@ -179,8 +179,8 @@ const fr_FR: Record<string, string> = {
     'Compact': 'Compacts',
     'Very compact': 'Très compacts',
     'Tab bar buttons': 'Boutons de la barre d’onglets',
-    'Grouped collects every button at the far right, two rows tall, and leaves that width to the tabs.':
-        'Regroupés rassemble tous les boutons à l’extrême droite, sur deux rangées, et laisse cette largeur aux onglets.',
+    'Grouped collects every button at the far right and leaves that width to the tabs.':
+        'Regroupés rassemble tous les boutons à l’extrême droite et laisse cette largeur aux onglets.',
     'Tabby default (either side)': 'Tabby par défaut (de chaque côté)',
     'Grouped on the right': 'Regroupés à droite',
     '{name} uploaded to {destination}': '{name} envoyé vers {destination}',

@@ -158,8 +158,8 @@ const de_DE: Record<string, string> = {
     'Compact': 'Kompakt',
     'Very compact': 'Sehr kompakt',
     'Tab bar buttons': 'Schaltflächen der Tableiste',
-    'Grouped collects every button at the far right, two rows tall, and leaves that width to the tabs.':
-        'Gruppiert sammelt alle Schaltflächen ganz rechts in zwei Reihen und überlässt die Breite den Tabs.',
+    'Grouped collects every button at the far right and leaves that width to the tabs.':
+        'Gruppiert sammelt alle Schaltflächen ganz rechts und überlässt die Breite den Tabs.',
     'Tabby default (either side)': 'Tabby-Standard (beidseitig)',
     'Grouped on the right': 'Rechts gruppiert',
     '{name} uploaded to {destination}': '{name} nach {destination} hochgeladen',

@@ -154,8 +154,8 @@ const es_ES: Record<string, string> = {
     'Compact': 'Compactas',
     'Very compact': 'Muy compactas',
     'Tab bar buttons': 'Botones de la barra de pestañas',
-    'Grouped collects every button at the far right, two rows tall, and leaves that width to the tabs.':
-        'Agrupados reúne todos los botones en el extremo derecho, en dos filas, y deja ese ancho a las pestañas.',
+    'Grouped collects every button at the far right and leaves that width to the tabs.':
+        'Agrupados reúne todos los botones en el extremo derecho y deja ese ancho a las pestañas.',
     'Tabby default (either side)': 'Predeterminado de Tabby (a cada lado)',
     'Grouped on the right': 'Agrupados a la derecha',
     '{name} uploaded to {destination}': '{name} subido a {destination}',
