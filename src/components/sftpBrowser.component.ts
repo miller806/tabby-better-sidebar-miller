@@ -1,5 +1,5 @@
 import './sftpBrowser.component.scss'
-import { posix } from 'path'
+import { join, posix } from 'path'
 import { filesize } from 'filesize'
 import { AfterViewChecked, Component, ElementRef, HostListener, Inject, NgZone, OnDestroy, ViewChild } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
@@ -15,7 +15,8 @@ import { freeLocalName } from '../localNames'
 import { SidebarPlusNoticesService } from '../notices.service'
 import { SidebarPlusI18nService } from '../i18n'
 import { readRemoteEntry, resolveRemoteSymlink } from '../remoteEntry'
-import { downloadRemoteTree } from '../remoteTree'
+import { downloadRemoteTree, uploadLocalTree } from '../remoteTree'
+import { isPathInside, planPaste, SftpClipboardEntry, SidebarPlusSftpClipboardService } from '../sftpClipboard.service'
 import { formatSftpDate, formatSftpDateTime, normalizeSftpDateFormat, SftpDateFormat } from '../sftpDate'
 import { SidebarPlusTempFilesService } from '../tempFiles.service'
 import { SftpTransfers } from '../transfers'
@@ -362,12 +363,13 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         private zone: NgZone,
         private editors: SidebarPlusEditorService,
         platform: PlatformService,
-        temp: SidebarPlusTempFilesService,
+        private temp: SidebarPlusTempFilesService,
         private notices: SidebarPlusNoticesService,
         private i18n: SidebarPlusI18nService,
         private dragServer: SidebarPlusDragOutServer,
         private registry: SidebarPlusTransfersService,
         private visibility: SidebarPlusVisibilityService,
+        private clipboard: SidebarPlusSftpClipboardService,
         @Inject(SFTPContextMenuItemProvider) contextMenuProviders: SFTPContextMenuItemProvider[],
     ) {
         super(ngbModalService, notify, platform, contextMenuProviders)
@@ -1904,16 +1906,13 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
     }
 
     /**
-     * Whether a path is the other one or lives underneath it.
-     *
-     * The separator matters: without it `/tmp/ab` would read as being inside
-     * `/tmp/a`. Same guard as the profile tree's own `isSelfOrDescendant()`,
-     * against a move that would make a directory its own ancestor — the server
-     * usually refuses it, but not always, and a `rename` that succeeds there
-     * detaches the whole subtree.
+     * Whether a path is the other one or lives underneath it — the shared guard
+     * in sftpClipboard.ts, which the paste planner uses for the same reason: a
+     * `rename` into a directory's own subtree detaches it, and a copy that
+     * starts walking its own output never finishes.
      */
     private isSelfOrDescendant (ancestor: string, candidate: string): boolean {
-        return candidate === ancestor || candidate.startsWith(ancestor.endsWith('/') ? ancestor : `${ancestor}/`)
+        return isPathInside(ancestor, candidate)
     }
 
     /**
@@ -2076,6 +2075,27 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
             click: () => { void this.confirmAndDelete(item) },
         })
         const selected = this.selectedItems()
+        // Clipboard entries sit above the destructive ones, and follow the same
+        // rule as the rest of this menu: the right-clicked row decides, unless it
+        // is part of a multiple selection, in which case the selection is meant.
+        const onSelection = selected.length > 1 && this.selection.has(item.fullPath)
+        const targets = onSelection ? selected : [item]
+        items.push({ type: 'separator' })
+        items.push({
+            label: onSelection ? this.i18n.t('Copy selection ({count})', { count: selected.length }) : this.i18n.t('Copy'),
+            click: () => this.copySelection(false, targets),
+        })
+        items.push({
+            label: onSelection ? this.i18n.t('Cut selection ({count})', { count: selected.length }) : this.i18n.t('Cut'),
+            click: () => this.copySelection(true, targets),
+        })
+        if (this.isDirectoryEntry(item)) {
+            items.push({
+                label: this.i18n.t('Paste into this folder'),
+                enabled: this.clipboard.hasEntries,
+                click: () => { void this.pasteClipboard(item.fullPath) },
+            })
+        }
         if (selected.length > 1 && this.selection.has(item.fullPath)) {
             items.push({
                 label: this.i18n.t('Delete selection ({count})', { count: selected.length }),
@@ -2160,22 +2180,87 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         this.notices.notice(this.i18n.t('{old} renamed to {new}', { old: item.name, new: name }))
     }
 
-    /** `Suppr` on the selection — a single entry takes the same confirm-then-delete path as the context menu's "Supprimer", several take the bulk one further down. */
+    /**
+     * Which side of the window the last click landed on.
+     *
+     * The panel shares the keyboard with the terminal it sits next to, and the
+     * document-wide key handler below sees every keystroke of both. `Enter`,
+     * `Backspace`, `Ctrl-C` and `Ctrl-V` all mean something to a shell, so they
+     * are only ours while the last click happened in the panel — the
+     * file-manager rule of "the pane you clicked in has the keyboard". `Delete`
+     * follows it too: deleting remote files because the user pressed `Suppr` in
+     * a terminal was never the intent.
+     */
+    private pointerInside = false
+
+    @HostListener('document:mousedown', ['$event'])
+    onDocumentMousedown (event: MouseEvent): void {
+        this.pointerInside = this.elementRef.nativeElement.contains(event.target as Node)
+    }
+
+    /**
+     * Whether this panel owns the keyboard right now.
+     *
+     * `offsetParent` also guards against firing while the panel is
+     * cached-but-detached for a different SSH tab: `SidebarPlusSftpComponent
+     * .detachPanel()` calls `.remove()` on the root node rather than merely
+     * hiding it (only the currently focused tab's browser is ever attached to
+     * `document`), so it is reliably null on every other cached instance.
+     */
+    private handlesKeys (): boolean {
+        return this.pointerInside && !!this.elementRef.nativeElement.offsetParent
+    }
+
+    /**
+     * Keyboard commands on the selection.
+     *
+     * `Ctrl-C`/`Ctrl-X`/`Ctrl-V` (⌘ on macOS) are the file-manager gestures the
+     * panel was missing; `Enter` opens what is selected — a folder navigates
+     * into it, a file takes the same edit round-trip as a double-click — and
+     * `Backspace` goes up one level. `Suppr` on the selection keeps the
+     * confirm-then-delete path: a single entry through the context menu's own
+     * confirmation, several through the bulk one further down.
+     */
     @HostListener('document:keydown', ['$event'])
     onDocumentKeydown (event: KeyboardEvent): void {
-        if (event.key !== 'Delete' || event.repeat || this.selection.size === 0 || this.deleteInFlight) {
-            return
-        }
-        // Guards against firing while this panel is cached-but-detached for a
-        // different SSH tab: `SidebarPlusSftpComponent.detachPanel()` calls
-        // `.remove()` on the root node rather than merely hiding it (only the
-        // currently focused tab's browser is ever attached to `document`), so
-        // `offsetParent` is reliably null on every other cached instance.
-        if (!this.elementRef.nativeElement.offsetParent) {
+        if (!this.handlesKeys() || event.altKey) {
             return
         }
         const target = event.target as HTMLElement
-        if (target.closest('input, textarea, [contenteditable]')) {
+        // Anything that takes typing, and anything that answers to Enter on its
+        // own, keeps its keys: a focused toolbar button must press, not navigate.
+        if (target.closest('input, textarea, select, [contenteditable], button, a[href]')) {
+            return
+        }
+        // Shift is left alone on purpose: Tabby binds the terminal's own
+        // copy/paste to Ctrl-Shift-C/Ctrl-Shift-V, and stealing them here would
+        // break the pane next door.
+        if ((event.ctrlKey || event.metaKey) && !event.shiftKey) {
+            const key = event.key.toLowerCase()
+            if (key === 'c' || key === 'x') {
+                event.preventDefault()
+                this.copySelection(key === 'x')
+            } else if (key === 'v') {
+                event.preventDefault()
+                void this.pasteClipboard(this.path)
+            }
+            return
+        }
+        if (event.key === 'Enter') {
+            event.preventDefault()
+            if (!event.repeat) {
+                void this.openSelection()
+            }
+            return
+        }
+        if (event.key === 'Backspace') {
+            if (this.canGoUp && !event.repeat) {
+                event.preventDefault()
+                this.goUp()
+            }
+            return
+        }
+        if (event.key !== 'Delete' || event.repeat || this.selection.size === 0 || this.deleteInFlight) {
             return
         }
         const items = this.selectedItems()
@@ -2184,6 +2269,228 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         } else if (items.length > 1) {
             void this.confirmAndDeleteSelection(items)
         }
+    }
+
+    /** `Enter`: exactly what a double-click does, for the one selected entry. */
+    private async openSelection (): Promise<void> {
+        const items = this.selectedItems()
+        if (items.length !== 1) {
+            return
+        }
+        await this.openItem(items[0])
+    }
+
+    ////// CLIPBOARD //////
+    /**
+     * Guards against two pastes racing each other: both would list the
+     * destination, both would find their names free, and the second would then
+     * refuse or overwrite whatever the first is in the middle of writing.
+     */
+    private pasteInFlight = false
+
+    /** Whether the background menu offers "Paste" as an action rather than a greyed-out line. */
+    get hasClipboard (): boolean {
+        return this.clipboard.hasEntries
+    }
+
+    /**
+     * `Ctrl-C` / `Ctrl-X` on the selection, or the context menu's two entries.
+     *
+     * Only paths are remembered, never the row objects: a paste can land in
+     * another directory, another session, or after a refresh that replaced
+     * every row.
+     */
+    private copySelection (cut: boolean, items: SFTPFile[] = this.selectedItems()): void {
+        if (!items.length || !this.sftp) {
+            return
+        }
+        this.clipboard.set(items.map(item => ({
+            name: item.name,
+            path: item.fullPath,
+            isDirectory: this.isDirectoryEntry(item),
+            size: item.size,
+            mode: item.mode,
+        })), cut, this.sftp)
+        this.notices.notice(cut
+            ? this.i18n.t('{count} items cut', { count: items.length })
+            : this.i18n.t('{count} items copied', { count: items.length }))
+    }
+
+    pasteFromMenu (): void {
+        this.backgroundMenuOpen = false
+        void this.pasteClipboard(this.path)
+    }
+
+    /**
+     * Pastes the clipboard into `destination`.
+     *
+     * SFTP has no copy command — the protocol can move an entry with a single
+     * `rename` and nothing else — so a copy is a download of the entries into a
+     * temporary directory followed by an upload back, each file showing up on
+     * its own line in the transfer panel. A *cut* that lands in the session it
+     * came from skips all of that and renames, which is the common case: moving
+     * a file between two folders of the same server.
+     *
+     * The destination listing is read first so the whole plan is decided before
+     * anything moves: a name already taken is refused rather than overwritten,
+     * an entry cannot be pasted into its own subtree, and when nothing can be
+     * done the user is told which entry and why instead of watching a silent
+     * no-op.
+     */
+    async pasteClipboard (destination: string): Promise<void> {
+        const source = this.clipboard.sourceSession
+        if (!this.sftp || !source || !this.clipboard.hasEntries || this.pasteInFlight) {
+            return
+        }
+        const entries = this.clipboard.entries.slice()
+        const cut = this.clipboard.cut
+        const sameSession = this.clipboard.isFrom(this.sftp)
+        // Read before deciding anything: the plan's collision check is only as
+        // good as this listing, and a `rename` onto a name the server lets us
+        // overwrite would destroy a file the user never agreed to lose.
+        let listing: SFTPFile[]
+        try {
+            listing = await this.sftp.readdir(destination)
+        } catch (e) {
+            this.notices.error(this.i18n.t('Could not read the contents of {name}', { name: destination }), String(e))
+            return
+        }
+        const plan = planPaste({ entries, destination, existingNames: listing.map(file => file.name), sameSession, cut })
+
+        this.pasteInFlight = true
+        let moved = 0
+        let copied = 0
+        let firstError: string|null = null
+        try {
+            for (const rejected of plan.rejected) {
+                firstError = firstError ?? (rejected.reason === 'inside'
+                    ? this.i18n.t('{name} cannot be copied into itself', { name: rejected.entry.name })
+                    : this.i18n.t('{name} already exists in {destination}', { name: rejected.entry.name, destination }))
+            }
+            for (const entry of plan.move) {
+                try {
+                    await this.sftp.rename(entry.path, posix.join(destination, entry.name))
+                    // The row is gone from where it was selected; the listing below
+                    // would otherwise keep a selection pointing at nothing.
+                    this.selection.delete(entry.path)
+                    moved++
+                } catch (e) {
+                    firstError = firstError ?? this.i18n.t('Could not move {name}: {error}', { name: entry.name, error: String(e) })
+                }
+            }
+            if (plan.transfer.length) {
+                const result = await this.transferEntries(plan.transfer, destination, source)
+                copied = result.copied
+                firstError = firstError ?? result.firstError
+            }
+        } finally {
+            this.pasteInFlight = false
+        }
+
+        if (cut && moved + copied === entries.length) {
+            // A second paste of a cut would try to move what is no longer there.
+            // Only once everything landed: a partial failure leaves the rest on
+            // the clipboard, where a retry can still pick them up.
+            this.clipboard.clear()
+        }
+        // A cut takes rows out of the directory on screen even when the paste
+        // landed somewhere else, so both sides are worth rereading.
+        const leftThisDirectory = plan.move.some(entry => posix.dirname(entry.path) === this.path)
+        if (destination === this.path || leftThisDirectory) {
+            await this.refreshListing()
+        }
+        this.reportPaste({ entries, cut, sameSession, destination, moved, copied, firstError })
+    }
+
+    /**
+     * Downloads the entries into a temporary directory and sends them back to
+     * `destination`, one entry at a time.
+     *
+     * Sequential rather than parallel, like the delete and move batches: every
+     * transfer shares one SFTP channel, and a failure is far easier to attribute
+     * to a name when only one entry can be in flight. Directories go through
+     * `downloadRemoteTree()`/`uploadLocalTree()`, which walk the tree on both
+     * sides; a symlink to a file arrives as a regular file with the target's
+     * content, and a symlink to a directory is left out, as it already is for
+     * every other copy this plugin makes.
+     */
+    private async transferEntries (
+        entries: SftpClipboardEntry[],
+        destination: string,
+        source: NonNullable<SidebarPlusSftpClipboardService['sourceSession']>,
+    ): Promise<{ copied: number, firstError: string|null }> {
+        let copied = 0
+        let firstError: string|null = null
+        const tempDir = await this.temp.makeDir('copy')
+        try {
+            for (const entry of entries) {
+                const local = join(tempDir, entry.name)
+                const target = posix.join(destination, entry.name)
+                try {
+                    if (entry.isDirectory) {
+                        await downloadRemoteTree(source, entry.path, local, (remote, localPath, item) =>
+                            this.fileTransfers.download(source, remote, localPath, item.name, item.size, item.mode))
+                        await uploadLocalTree(this.sftp, local, target, (localPath, remotePath, mode, size) =>
+                            this.fileTransfers.upload(this.sftp, remotePath, localPath, posix.basename(remotePath), size, mode))
+                    } else {
+                        await this.fileTransfers.download(source, entry.path, local, entry.name, entry.size, entry.mode)
+                        await this.fileTransfers.upload(this.sftp, target, local, entry.name, entry.size, entry.mode)
+                    }
+                    copied++
+                } catch (e) {
+                    firstError = firstError ?? this.i18n.t('Could not copy {name}: {error}', { name: entry.name, error: String(e) })
+                }
+            }
+        } finally {
+            await this.temp.remove(tempDir)
+        }
+        return { copied, firstError }
+    }
+
+    /**
+     * Says what the paste did.
+     *
+     * Same wording rules as the drag-move batch: one entry gets a sentence
+     * naming it, several get a count, and a partial failure states both numbers
+     * with the first error attached rather than claiming a success it did not
+     * have. A cut pasted into another session is called out, because it copies
+     * instead of moving and the originals stay where they were.
+     */
+    private reportPaste (result: {
+        entries: SftpClipboardEntry[]
+        cut: boolean
+        sameSession: boolean
+        destination: string
+        moved: number
+        copied: number
+        firstError: string|null
+    }): void {
+        const total = result.moved + result.copied
+        const failed = result.entries.length - total
+        const moved = result.moved > 0 && result.copied === 0
+        if (total === 0) {
+            this.notices.error(this.i18n.t('No copy succeeded'), result.firstError ?? undefined)
+            return
+        }
+        if (failed === 0) {
+            if (result.entries.length === 1) {
+                this.notices.notice(moved
+                    ? this.i18n.t('{name} moved to {destination}', { name: result.entries[0].name, destination: result.destination })
+                    : this.i18n.t('{name} copied to {destination}', { name: result.entries[0].name, destination: result.destination }))
+            } else {
+                this.notices.notice(moved
+                    ? this.i18n.t('{count} items moved to {destination}', { count: result.moved, destination: result.destination })
+                    : this.i18n.t('{count} items copied to {destination}', { count: result.copied, destination: result.destination }))
+            }
+            if (result.cut && !result.sameSession) {
+                this.notices.notice(this.i18n.t('Copied across sessions — the originals were left in place'))
+            }
+            return
+        }
+        this.notices.error(moved
+            ? this.i18n.t('{succeeded} moved, {failed} failed', { succeeded: result.moved, failed })
+            : this.i18n.t('{succeeded} copied, {failed} failed', { succeeded: result.copied, failed }),
+        result.firstError ?? undefined)
     }
 
     async confirmAndDelete (item: SFTPFile): Promise<void> {

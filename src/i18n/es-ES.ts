@@ -118,6 +118,25 @@ const es_ES: Record<string, string> = {
     'No move succeeded': 'Ningún movimiento se realizó',
     '{succeeded} moved, {failed} failed': '{succeeded} movidos, {failed} fallidos',
 
+    // sftpBrowser.component.ts — clipboard
+    '{count} items copied': '{count} elementos copiados',
+    '{count} items cut': '{count} elementos cortados',
+    'Copy': 'Copiar',
+    'Cut': 'Cortar',
+    'Paste': 'Pegar',
+    'Copy selection ({count})': 'Copiar la selección ({count})',
+    'Cut selection ({count})': 'Cortar la selección ({count})',
+    'Paste into this folder': 'Pegar en esta carpeta',
+    'Paste the copied files here': 'Pegar aquí los archivos copiados',
+    '{name} cannot be copied into itself': '{name} no se puede copiar dentro de sí mismo',
+    '{name} copied to {destination}': '{name} copiado a {destination}',
+    '{count} items copied to {destination}': '{count} elementos copiados a {destination}',
+    'Could not copy {name}: {error}': 'No se pudo copiar {name}: {error}',
+    'No copy succeeded': 'Ninguna copia se realizó',
+    '{succeeded} copied, {failed} failed': '{succeeded} copiados, {failed} fallidos',
+    'Copied across sessions — the originals were left in place':
+        'Copiado entre sesiones — los originales se dejaron en su sitio',
+
     // sftpBrowser.component.ts — showContextMenu()
     'Open with...': 'Abrir con...',
     'Rename...': 'Renombrar...',

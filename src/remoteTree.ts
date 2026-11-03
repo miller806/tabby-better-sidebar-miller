@@ -105,3 +105,45 @@ async function targetIsDirectory (sftp: SftpSession, remotePath: string): Promis
         return true
     }
 }
+
+/** Sends one local file to one remote path. Supplied by the caller, which owns how a transfer is reported. */
+export type FileSender = (localPath: string, remotePath: string, mode: number, size: number) => Promise<void>
+
+/**
+ * Copies a local directory up to a remote one, depth first — the other half of
+ * `downloadRemoteTree()`, used when a remote copy cannot be done server-side.
+ *
+ * The remote root is expected **not** to exist yet: the caller refuses a paste
+ * onto an existing name, which is what keeps this from merging into a directory
+ * the user never chose to touch.
+ *
+ * Symlinks in the local copy are skipped. `downloadRemoteTree()` materialises a
+ * link to a file as a regular file, and leaves a link to a directory out
+ * entirely, so anything left here is an artefact of the local filesystem rather
+ * than part of what the user asked to copy.
+ */
+export async function uploadLocalTree (
+    sftp: SftpSession,
+    localPath: string,
+    remotePath: string,
+    send: FileSender,
+): Promise<void> {
+    await sftp.mkdir(remotePath)
+    const walk = async (local: string, remote: string): Promise<void> => {
+        for (const entry of await fs.promises.readdir(local, { withFileTypes: true })) {
+            const childLocal = path.join(local, entry.name)
+            const childRemote = path.posix.join(remote, entry.name)
+            if (entry.isDirectory()) {
+                await sftp.mkdir(childRemote)
+                await walk(childLocal, childRemote)
+                continue
+            }
+            if (!entry.isFile()) {
+                continue
+            }
+            const stats = await fs.promises.stat(childLocal)
+            await send(childLocal, childRemote, stats.mode & 0o7777, stats.size)
+        }
+    }
+    await walk(localPath, remotePath)
+}

@@ -3,6 +3,23 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.23 (2026-11-02)
+
+- **Copy, cut and paste** in the SFTP browser, with `Ctrl-C` / `Ctrl-X` /
+  `Ctrl-V` (⌘ on macOS) and three context-menu entries. A cut pasted back into
+  the session it came from is a server-side rename; a copy downloads into a
+  temporary folder and uploads back, each file reported on its own transfer
+  line. An existing name is refused instead of overwritten, a folder cannot be
+  pasted into its own subtree, and a paste that can do nothing says which entry
+  and why.
+- **`Enter` opens the selected entry** — folders navigate into them, files take
+  the double-click edit round-trip — and **`Backspace`** goes up one level.
+- Keyboard commands now belong to the pane that was clicked last. `Delete` on
+  the selection no longer fires while the user is typing in the terminal, which
+  it did: the document-wide handler saw both.
+- New regression tests for the paste planner (collisions, self-descendants,
+  cut versus copy, path-prefix trap) run in CI alongside the workspace tests.
+
 ## 1.0.22 (2026-11-02)
 
 - Move the SSH connection indicator to a compact green or red dot after the server title, leaving the tag row exclusively for custom labels.

@@ -180,7 +180,17 @@ be **frozen** on one session so it stops following the focused tab.
   again to flip the direction; date and size start with the newest and the
   biggest at the top. Also in the header's right-click menu, for a column
   that is hidden. The choice is remembered
-- **Multiple selection**, files *and* folders, for bulk delete and move
+- **Multiple selection**, files *and* folders, for bulk delete and copy, cut or
+  move
+- **Copy, cut and paste** with `Ctrl-C` / `Ctrl-X` / `Ctrl-V` (⌘ on macOS), or
+  from the context menu. A cut pasted back into the same server is a rename, so
+  nothing transits; a copy downloads to a temporary folder and uploads back,
+  with each file on its own line of the transfer manager. An existing name is
+  refused rather than overwritten, and a folder cannot be pasted into itself
+- **Keyboard navigation**: `Enter` opens the selected entry — folders navigate
+  into them, files take the same edit round-trip as a double-click — and
+  `Backspace` goes up one level. Those keys only act while the panel is the
+  pane you last clicked in, so typing in a terminal never moves the listing
 - **Chunked loading** of large directory listings
 - **Double-click opens a file in a code editor**, never through the OS file
   association — so double-clicking an executable edits it instead of running it.

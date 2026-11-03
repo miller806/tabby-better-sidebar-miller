@@ -18,7 +18,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm run test:workspace-tabs
+      - run: npm test
       - run: npm run lint:i18n
       - run: npm run build:prod
       - run: npm pack

@@ -122,6 +122,25 @@ const de_DE: Record<string, string> = {
     'No move succeeded': 'Keine Verschiebung war erfolgreich',
     '{succeeded} moved, {failed} failed': '{succeeded} verschoben, {failed} fehlgeschlagen',
 
+    // sftpBrowser.component.ts — clipboard
+    '{count} items copied': '{count} Elemente kopiert',
+    '{count} items cut': '{count} Elemente ausgeschnitten',
+    'Copy': 'Kopieren',
+    'Cut': 'Ausschneiden',
+    'Paste': 'Einfügen',
+    'Copy selection ({count})': 'Auswahl kopieren ({count})',
+    'Cut selection ({count})': 'Auswahl ausschneiden ({count})',
+    'Paste into this folder': 'In diesen Ordner einfügen',
+    'Paste the copied files here': 'Die kopierten Dateien hier einfügen',
+    '{name} cannot be copied into itself': '{name} kann nicht in sich selbst kopiert werden',
+    '{name} copied to {destination}': '{name} nach {destination} kopiert',
+    '{count} items copied to {destination}': '{count} Elemente nach {destination} kopiert',
+    'Could not copy {name}: {error}': '{name} konnte nicht kopiert werden: {error}',
+    'No copy succeeded': 'Kein Kopiervorgang war erfolgreich',
+    '{succeeded} copied, {failed} failed': '{succeeded} kopiert, {failed} fehlgeschlagen',
+    'Copied across sessions — the originals were left in place':
+        'Sitzungsübergreifend kopiert — die Originale wurden belassen',
+
     // sftpBrowser.component.ts — showContextMenu()
     'Open with...': 'Öffnen mit...',
     'Rename...': 'Umbenennen...',

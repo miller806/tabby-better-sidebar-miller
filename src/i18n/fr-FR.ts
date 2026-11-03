@@ -143,6 +143,25 @@ const fr_FR: Record<string, string> = {
     'No move succeeded': 'Aucun déplacement n’a abouti',
     '{succeeded} moved, {failed} failed': '{succeeded} déplacés, {failed} en échec',
 
+    // sftpBrowser.component.ts — clipboard
+    '{count} items copied': '{count} éléments copiés',
+    '{count} items cut': '{count} éléments coupés',
+    'Copy': 'Copier',
+    'Cut': 'Couper',
+    'Paste': 'Coller',
+    'Copy selection ({count})': 'Copier la sélection ({count})',
+    'Cut selection ({count})': 'Couper la sélection ({count})',
+    'Paste into this folder': 'Coller dans ce dossier',
+    'Paste the copied files here': 'Coller ici les fichiers copiés',
+    '{name} cannot be copied into itself': '{name} ne peut pas être copié dans lui-même',
+    '{name} copied to {destination}': '{name} copié vers {destination}',
+    '{count} items copied to {destination}': '{count} éléments copiés vers {destination}',
+    'Could not copy {name}: {error}': 'Impossible de copier {name} : {error}',
+    'No copy succeeded': 'Aucune copie n’a abouti',
+    '{succeeded} copied, {failed} failed': '{succeeded} copiés, {failed} en échec',
+    'Copied across sessions — the originals were left in place':
+        'Copié entre sessions — les originaux ont été laissés en place',
+
     // sftpBrowser.component.ts — showContextMenu()
     'Open with...': 'Ouvrir avec...',
     'Rename...': 'Renommer...',

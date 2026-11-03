@@ -1,6 +1,6 @@
 {
   "name": "tabby-better-sidebar-miller",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "description": "Enhanced connection sidebar for Tabby: a contextual SFTP browser inside the sidebar itself, pinned favorites, live connection status, active sessions, workspaces, SSH tunnels, drag & drop (including dragging remote files out to the OS), a transfer manager, and a custom icon picker.",
   "keywords": [
     "tabby-plugin",
@@ -50,7 +50,9 @@
     "lint:airules": "html-validate \".AIRules/**/*.html\"",
     "lint:i18n": "node scripts/lint-i18n.js",
     "prepublishOnly": "npm run build:prod",
-    "test:workspace-tabs": "node --test scripts/test-workspace-tabs.js"
+    "test": "npm run test:workspace-tabs && npm run test:sftp-clipboard",
+    "test:workspace-tabs": "node --test scripts/test-workspace-tabs.js",
+    "test:sftp-clipboard": "node --test scripts/test-sftp-clipboard.js"
   },
   "files": [
     "dist",

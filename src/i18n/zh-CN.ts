@@ -119,6 +119,24 @@ const zh_CN: Record<string, string> = {
     'No move succeeded': '没有移动成功',
     '{succeeded} moved, {failed} failed': '成功 {succeeded} 项，失败 {failed} 项',
 
+    // sftpBrowser.component.ts — clipboard
+    '{count} items copied': '已复制 {count} 项',
+    '{count} items cut': '已剪切 {count} 项',
+    'Copy': '复制',
+    'Cut': '剪切',
+    'Paste': '粘贴',
+    'Copy selection ({count})': '复制所选（{count}）',
+    'Cut selection ({count})': '剪切所选（{count}）',
+    'Paste into this folder': '粘贴到此文件夹',
+    'Paste the copied files here': '把复制的文件粘贴到这里',
+    '{name} cannot be copied into itself': '{name} 不能复制到自身',
+    '{name} copied to {destination}': '{name} 已复制到 {destination}',
+    '{count} items copied to {destination}': '已将 {count} 项复制到 {destination}',
+    'Could not copy {name}: {error}': '无法复制 {name}：{error}',
+    'No copy succeeded': '没有复制成功',
+    '{succeeded} copied, {failed} failed': '成功 {succeeded} 项，失败 {failed} 项',
+    'Copied across sessions — the originals were left in place': '已跨会话复制——原文件保留在原位',
+
     // sftpBrowser.component.ts — showContextMenu()
     'Open with...': '打开方式…',
     'Rename...': '重命名…',
