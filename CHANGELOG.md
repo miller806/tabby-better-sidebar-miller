@@ -3,6 +3,18 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.29 (2026-11-02)
+
+- The dock gets the panel a wide column deserves: the path and toolbar row is
+  now a header with a divider under it, the listing sits in a little air below
+  it, rows are one notch taller with slightly larger text, and the whole panel
+  uses the sidebar's own half-rem horizontal inset so the two columns either
+  side of the terminal line up. The sidebar placement keeps the denser metrics
+  it was tuned for at a third of the width.
+- An empty directory now says so. A blank framed panel used to be
+  indistinguishable from one still loading or one whose contents were filtered
+  away.
+
 ## 1.0.28 (2026-11-02)
 
 - The right-hand SFTP dock now uses the theme instead of its own greys: the

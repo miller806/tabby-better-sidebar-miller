@@ -52,10 +52,34 @@ sidebar-plus-sftp-dock .sftp-dock-collapse {
 }
 
 // The sidebar used to pad the panel with its own `.p-2` content box. In the dock
-// the panel is the whole column, so it needs its own inset — flush against the
-// window edge is what read as "not part of the app".
+// the panel is the whole column, so it needs its own inset — and the same
+// horizontal rhythm the sidebar uses (`.p-2`, half a rem), so the two panels
+// either side of the terminal line up.
 sidebar-plus-sftp-dock sidebar-plus-sftp {
     flex: 1 1 auto;
     min-height: 0;
-    padding: .25rem .35rem .35rem;
+    padding: .2rem .5rem .5rem;
+}
+
+// A wide panel needs a header, not two floating rows: the path/toolbar row gets
+// a divider under it and a little air above the listing, which is what makes the
+// top of the dock read as chrome rather than as the first line of the table.
+sidebar-plus-sftp-dock sidebar-plus-sftp-browser .sftp-toolbar {
+    padding: .2rem .1rem .3rem;
+    border-bottom: 1px solid var(--theme-secondary);
+}
+
+sidebar-plus-sftp-dock sidebar-plus-sftp-browser .sftp-body {
+    margin: .35rem .05rem .1rem;
+}
+
+// Room the 300px sidebar could not spare: one notch larger text and taller rows.
+// Scoped to the dock, so the sidebar placement keeps the density it was tuned
+// for at a third of the width.
+sidebar-plus-sftp-dock sidebar-plus-sftp-browser .sftp-row {
+    font-size: .78rem;
+
+    > * {
+        min-height: 1.55rem;
+    }
 }

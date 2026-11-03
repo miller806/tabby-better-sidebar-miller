@@ -170,6 +170,7 @@ const fr_FR: Record<string, string> = {
     'Hide the SFTP panel': 'Masquer le panneau SFTP',
     'Toggle the SFTP panel': 'Afficher ou masquer le panneau SFTP',
     'The clipboard holds no files': 'Le presse-papiers ne contient aucun fichier',
+    'This folder is empty.': 'Ce dossier est vide.',
     '{name} uploaded to {destination}': '{name} envoyé vers {destination}',
     '{count} items uploaded to {destination}': '{count} éléments envoyés vers {destination}',
     'Could not upload {name}: {error}': 'Impossible d’envoyer {name} : {error}',

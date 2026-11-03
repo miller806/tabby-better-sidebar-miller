@@ -211,6 +211,7 @@
             .sftp-load-more(*ngIf='hasMoreRows', #loadMoreSentinel='') {{ '… {n} more items' | translate:{ n: remainingRowCount } }}
 
         .sftp-message(*ngIf='filterFoundNothing') {{ 'No file matches the filter.' | translate }}
+        .sftp-message(*ngIf='folderIsEmpty') {{ 'This folder is empty.' | translate }}
 
 //- Both menus are rendered outside .sftp-body: they are `position: fixed`, and
 //- living inside the scrolling element would let them drift with the list.

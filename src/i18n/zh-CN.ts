@@ -144,6 +144,7 @@ const zh_CN: Record<string, string> = {
     'Hide the SFTP panel': '隐藏 SFTP 面板',
     'Toggle the SFTP panel': '显示/隐藏 SFTP 面板',
     'The clipboard holds no files': '剪贴板里没有文件',
+    'This folder is empty.': '此文件夹为空。',
     '{name} uploaded to {destination}': '{name} 已上传到 {destination}',
     '{count} items uploaded to {destination}': '已将 {count} 项上传到 {destination}',
     'Could not upload {name}: {error}': '无法上传 {name}：{error}',

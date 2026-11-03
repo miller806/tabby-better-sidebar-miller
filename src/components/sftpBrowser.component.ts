@@ -3238,6 +3238,17 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         return this.fileList !== null && this.displayedFiles.length === 0 && this.hasActiveFilter
     }
 
+    /**
+     * An empty directory said out loud.
+     *
+     * Without it a listing that successfully read zero entries is a blank panel
+     * inside a frame — indistinguishable from a directory still loading, or from
+     * one whose contents are all filtered out (which already has its own line).
+     */
+    get folderIsEmpty (): boolean {
+        return this.fileList !== null && this.displayedFiles.length === 0 && !this.hasActiveFilter
+    }
+
     goRoot (): void {
         void this.navigate('/')
     }
