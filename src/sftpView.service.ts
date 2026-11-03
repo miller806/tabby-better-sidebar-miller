@@ -36,6 +36,18 @@ export class SidebarPlusSftpViewService {
         return this.placement === 'right'
     }
 
+    /**
+     * Whether the transfer list belongs to the dock right now.
+     *
+     * It rides with the SFTP panel while that panel is on screen and falls back
+     * to the sidebar the moment it is collapsed: a transfer keeps running
+     * whether or not anyone is looking, and losing sight of it is exactly the
+     * moment it matters. Only one host renders it at a time.
+     */
+    get transfersInDock (): boolean {
+        return this.inDock && this.visible
+    }
+
     show (): void {
         this.visible = true
     }

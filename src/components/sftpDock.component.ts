@@ -1,5 +1,6 @@
 import './sftpDock.component.scss'
 import { Component, HostBinding, HostListener } from '@angular/core'
+import { ConfigService } from 'tabby-core'
 import { SidebarPlusSftpViewService } from '../sftpView.service'
 
 /** Narrow enough for a name column, wide enough for size and date beside it. */
@@ -27,7 +28,13 @@ const WIDTH_KEY = 'sidebarPlusSftpDockWidth'
     template: require('./sftpDock.component.pug'),
 })
 export class SidebarPlusSftpDockComponent {
-    constructor (private view: SidebarPlusSftpViewService) { }
+    constructor (private view: SidebarPlusSftpViewService, private config: ConfigService) { }
+
+    /** Same rule as the sidebar's own `showTransfers`: the panel has to be on, and its transfer block too. */
+    get showTransfers (): boolean {
+        const sp = this.config.store.sidebarPlus
+        return (sp?.showSftp ?? true) && (sp?.showTransfers ?? true)
+    }
 
     get visible (): boolean {
         return this.view.visible

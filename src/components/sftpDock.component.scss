@@ -51,6 +51,25 @@ sidebar-plus-sftp-dock .sftp-dock-collapse {
     }
 }
 
+// The column holding the file list and the transfer list under it. The dock
+// itself is a row — rail, then this — so without an explicit direction here the
+// two would sit side by side.
+sidebar-plus-sftp-dock .sftp-dock-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+}
+
+// The block keeps its sidebar header metrics; only the inset follows the dock's.
+sidebar-plus-sftp-dock .sftp-dock-main sidebar-plus-transfers {
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding: 0 .5rem .35rem;
+    border-top: 1px solid var(--theme-secondary);
+}
+
 // The sidebar used to pad the panel with its own `.p-2` content box. In the dock
 // the panel is the whole column, so it needs its own inset — and the same
 // horizontal rhythm the sidebar uses (`.p-2`, half a rem), so the two panels

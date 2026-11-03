@@ -158,3 +158,18 @@ test('the SFTP view defaults to the right-hand dock, and can be asked for the si
     assert.equal(sidebar.placement, 'sidebar')
     assert.equal(sidebar.inDock, false)
 })
+
+test('the transfer list follows the open dock and falls back to the sidebar when it is closed', () => {
+    const view = loadView({})
+    // Closed dock: the sidebar keeps the block, so a running transfer stays visible.
+    assert.equal(view.transfersInDock, false)
+    view.show()
+    assert.equal(view.transfersInDock, true)
+    view.hide()
+    assert.equal(view.transfersInDock, false)
+
+    // Sidebar placement never moves it out of the sidebar, shown or not.
+    const sidebar = loadView({ sftpPlacement: 'sidebar' })
+    sidebar.show()
+    assert.equal(sidebar.transfersInDock, false)
+})

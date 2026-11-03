@@ -1,12 +1,15 @@
 .p-2.sidebar-plus-content.d-flex.flex-column
+    //- The mode switcher only exists while the SFTP view replaces this tree: two
+    //- tabs, one of them always on. Docked at the right, there is no mode to
+    //- switch — the tree is always the tree — and a lone full-width "SFTP"
+    //- button at the top of the sidebar read as a stranded leftover. The dock's
+    //- own button in Tabby's tab bar is what shows and hides it there, and a
+    //- session row's SFTP action still opens it.
+    //-
     //- Kept as the very first row, above the workspace bar, so it stays put
     //- when switching modes instead of sliding around under the cursor.
-    .view-mode-bar.d-flex.align-items-center
-        //- Two tabs while the view replaces this tree, one toggle while it is
-        //- docked at the right: there is nothing to switch away from then, and
-        //- the tree stays exactly where it is.
+    .view-mode-bar.d-flex.align-items-center(*ngIf='!sftpInDock')
         a.view-mode-tab(
-            *ngIf='!sftpInDock',
             [class.active]='!sftpMode',
             (click)='setSftpMode(false)',
             [title]="'Profiles' | translate",
@@ -137,7 +140,11 @@
     //- Shown in both views, not only in SFTP: a transfer started from the SFTP
     //- panel keeps running after switching back to the profiles, and losing
     //- sight of it there would be the one moment it matters.
-    sidebar-plus-transfers(*ngIf='showTransfers')
+    //- The dock owns this block while it is open — it sits under the file list
+    //- there, which is where a transfer started from that panel belongs. Closed
+    //- (or in the sidebar placement), it comes back here rather than vanishing:
+    //- a transfer runs whether or not anyone is looking at it.
+    sidebar-plus-transfers(*ngIf='showTransfers && !transfersInDock')
 
     //- Which of the two blocks below renders is an explicit per-user setting
     //- (workspaceSelectorMode, next to showWorkspaces in the settings tab),

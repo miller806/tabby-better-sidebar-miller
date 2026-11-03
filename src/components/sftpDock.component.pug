@@ -1,7 +1,8 @@
-//- The dock's own chrome, and nothing else: one narrow rail on the left that
-//- both resizes and collapses, then the SFTP view itself. Keeping the rail out
-//- of the panel's template is what lets the panel be hosted in the sidebar
-//- unchanged — the layout of the two hosts is the only difference between them.
+//- The dock's own chrome: one narrow rail on the left that both resizes and
+//- collapses, then a column holding the SFTP view and, under it, the transfer
+//- list. Keeping the rail out of the panel's template is what lets the panel be
+//- hosted in the sidebar unchanged — the layout of the two hosts is the only
+//- difference between them.
 .sftp-dock-rail((mousedown)='startResize($event)')
     //- Stopped at mousedown: the rail starts a resize, this button does not.
     button.sftp-dock-collapse(
@@ -12,7 +13,15 @@
     )
         .fa.fa-fw.fas.fa-chevron-right
 
-sidebar-plus-sftp.flex-grow-1(
-    [active]='visible',
-    (closed)='hide()'
-)
+//- A column of its own: the dock is a row (rail, then this), and the transfer
+//- list belongs *below* the file list, not beside it.
+.sftp-dock-main
+    sidebar-plus-sftp.flex-grow-1(
+        [active]='visible',
+        (closed)='hide()'
+    )
+
+    //- Under the file list, where a transfer started from this panel belongs.
+    //- The sidebar renders the same block whenever this one is not on screen —
+    //- see the view service's `transfersInDock`.
+    sidebar-plus-transfers(*ngIf='showTransfers && visible')

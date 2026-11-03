@@ -3,6 +3,19 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.30 (2026-11-02)
+
+- The **transfer list now lives at the bottom of the right-hand dock** while
+  that dock is open, under the file list it belongs to — the space a short
+  directory leaves is no longer dead, and the transfers started from that panel
+  are next to it. Closing the dock hands the block back to the sidebar rather
+  than hiding it: a transfer runs whether or not anyone is watching.
+- The sidebar's top mode switcher is gone in the dock placement. With the SFTP
+  view no longer replacing the tree, it reduced to a single full-width "SFTP"
+  button stranded above the profile list; the dock's button in Tabby's tab bar
+  shows and hides it there, and a session row's SFTP action still opens it. The
+  two-tab switcher is unchanged in the sidebar placement.
+
 ## 1.0.29 (2026-11-02)
 
 - The dock gets the panel a wide column deserves: the path and toolbar row is

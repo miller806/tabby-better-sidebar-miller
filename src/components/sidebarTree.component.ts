@@ -278,6 +278,11 @@ export class SidebarPlusTreeComponent implements OnInit, OnDestroy, AfterViewChe
         return this.sftpMode && !this.sftpInDock
     }
 
+    /** Whether the open dock is showing the transfer list — see the view service. */
+    get transfersInDock (): boolean {
+        return this.sftpView.transfersInDock
+    }
+
     /**
      * Groups (isTemplate/blacklist already filtered, like profileGroups) but
      * *not* filtered by the active workspace's visibility — kept around so
