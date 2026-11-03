@@ -49,14 +49,29 @@ export class SidebarPlusSftpViewService {
     }
 
     show (): void {
-        this.visible = true
+        this.set(true)
     }
 
     hide (): void {
-        this.visible = false
+        this.set(false)
     }
 
     toggle (): void {
-        this.visible = !this.visible
+        this.set(!this.visible)
+    }
+
+    /**
+     * The toolbar button that toggles this view lives in Tabby's tab bar, a
+     * component this plugin does not own: a class on `<body>` is the one handle
+     * its stylesheet has on it, and it is what gives the button a pressed state
+     * instead of leaving it indistinguishable from an action.
+     */
+    private set (visible: boolean): void {
+        this.visible = visible
+        try {
+            document.body.classList.toggle('sidebar-plus-sftp-open', visible)
+        } catch {
+            // No DOM (headless, or a unit test): the state itself is all that matters.
+        }
     }
 }

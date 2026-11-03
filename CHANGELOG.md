@@ -3,7 +3,20 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.33 (2026-11-02)
+
+- The tab-bar toolbar buttons — Tabby's own gear, the `+` and quick-command
+  icons, this plugin's panel toggle — are now styled as one quiet family:
+  dimmed at rest, tinted `--theme-secondary` on hover, uniform 16px icons and
+  even padding. Out of the box they carried Tabby's chrome, which was heavier
+  than the rest of this plugin's UI and gave no resting/hover difference.
+- This plugin's SFTP toggle now shows whether its panel is open (accent icon and
+  underline), instead of looking like a fire-and-forget action button. The state
+  is published as a class on `<body>`, which is the only handle a plugin has on
+  a button Tabby renders.
+
 ## 1.0.32 (2026-11-02)
+
 
 - **Tab width setting** (Settings → Better Sidebar → General): Tabby gives every
   tab 200px, so a wide window showed three of them and left the rest of a long

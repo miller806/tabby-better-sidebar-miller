@@ -69,6 +69,49 @@ tab-header.sidebar-plus-workspace-tab-hidden {
     }
 }
 
+// Tab-bar toolbar buttons — Tabby's own settings gear, and every icon the
+// installed plugins contribute (`+`, quick commands, this plugin's panel).
+// Untouched they inherit Tabby's chrome, which is heavier than the rest of this
+// plugin's UI: full-strength icons, no resting/hover distinction, and a
+// bottom-border highlight that reads as a second set of tabs. One quiet
+// language instead: dimmed at rest, tinted on hover, accent when the thing it
+// toggles is open.
+.tab-bar .btn-tab-bar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--tabs-height);
+    padding: 0 8px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    opacity: .62;
+    transition: opacity 120ms ease, background-color 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+        opacity: 1;
+        background-color: var(--theme-secondary);
+    }
+
+    > svg,
+    > i {
+        width: 16px;
+        height: 16px;
+        font-size: 14px;
+    }
+}
+
+// This plugin's own dock toggle, while the panel it toggles is open. `:has()`
+// on the icon is what names it: a ToolbarButton carries no class of its own,
+// and the icon is the one element the provider controls.
+body.sidebar-plus-sftp-open .tab-bar .btn-tab-bar:has(.sidebar-plus-dock-icon) {
+    opacity: 1;
+    color: var(--theme-primary);
+    box-shadow: inset 0 -2px 0 var(--theme-primary);
+}
+
 // Tab width. Tabby hands every horizontal tab the same 200px (`targetTabSize`
 // in its tab bar), which fits three cards on a wide window and leaves the rest
 // of a long title ellipsised anyway. The setting on <body> narrows that budget;

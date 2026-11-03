@@ -159,6 +159,32 @@ test('the SFTP view defaults to the right-hand dock, and can be asked for the si
     assert.equal(sidebar.inDock, false)
 })
 
+test('the view service keeps working without a DOM, and publishes its state when there is one', () => {
+    // Headless: toggling must not throw just because there is no document.
+    const headless = loadView({})
+    headless.toggle()
+    assert.equal(headless.visible, true)
+
+    const classes = new Set()
+    const document = { body: { classList: { toggle: (name, on) => on ? classes.add(name) : classes.delete(name) } } }
+    const exports = {}
+    const context = {
+        exports,
+        document,
+        require: name => name === '@angular/core' ? { Injectable: () => t => t } : name === 'tabby-core' ? { ConfigService: class {} } : {},
+    }
+    const js = ts.transpileModule(fs.readFileSync('src/sftpView.service.ts', 'utf8'), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, experimentalDecorators: true },
+    }).outputText
+    vm.runInNewContext(js, context)
+    const view = new exports.SidebarPlusSftpViewService({ store: { sidebarPlus: {} } })
+    assert.equal(classes.has('sidebar-plus-sftp-open'), false)
+    view.show()
+    assert.equal(classes.has('sidebar-plus-sftp-open'), true)
+    view.hide()
+    assert.equal(classes.has('sidebar-plus-sftp-open'), false)
+})
+
 test('the transfer list follows the open dock and falls back to the sidebar when it is closed', () => {
     const view = loadView({})
     // Closed dock: the sidebar keeps the block, so a running transfer stays visible.
