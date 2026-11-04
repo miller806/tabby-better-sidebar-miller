@@ -3,6 +3,19 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.40 (2026-11-02)
+
+- **Opening a tab no longer costs a dozen synchronisations.** A tab opening is a
+  burst of events — `tabsChanged`, `activeTabChange`, a title change — plus the
+  strip's `ResizeObserver` firing on *every frame* of Tabby's open animation.
+  Each one ran a full pass immediately: a DOM query, the per-header tag work, two
+  `getBoundingClientRect()` calls to reveal the new tab, and a record write, all
+  while the shell itself was starting. The pass is now coalesced to one trailing
+  run after the burst, and the resize observer no longer asks for a reveal (a
+  resize is not a selection change, and the reveal is what forced a layout).
+- This is the local-shell case the report came from, but it applies to every tab
+  type: nothing in that path depended on the tab being SSH.
+
 ## 1.0.39 (2026-11-02)
 
 - **Opening more tabs no longer makes the tab bar taller.** Tagged cards were

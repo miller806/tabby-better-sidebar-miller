@@ -471,14 +471,28 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
                 // Only direct header insertion/removal. Terminal output and chip updates are outside this scope.
                 this.observer.observe(strip, { childList: true })
                 this.installNavigation(strip as HTMLElement)
-                this.resizeObserver = new ResizeObserver(() => {
-                    this.revealActive = true
-                    this.schedule()
-                })
+                // Deliberately does not ask for a reveal: a resize is not a
+                // selection change, and `revealSelectedHeader()` costs two
+                // `getBoundingClientRect()` calls — a forced layout — which the
+                // open animation would pay on every frame through this observer.
+                this.resizeObserver = new ResizeObserver(() => this.schedule())
                 this.resizeObserver.observe(strip)
             })
         }
     }
+
+    /**
+     * How long a burst of events is given to settle before the strip is
+     * re-examined.
+     *
+     * A tab opening is not one event: `tabsChanged$`, `activeTabChange$`, a
+     * title change, and — the noisy one — a `ResizeObserver` firing on every
+     * frame of Tabby's open animation as the strip grows. At 0ms that was one
+     * full `sync()` per frame: a DOM query, per-header tag work, a forced layout
+     * to reveal the new tab, and a `localStorage` write, all while the shell
+     * itself is starting. One trailing pass after the burst does the same job.
+     */
+    private static readonly SYNC_DELAY_MS = 30
 
     private schedule (): void {
         if (this.dragging || (!this.needsHeaders() && !this.applied) || this.pending !== undefined) {
@@ -489,7 +503,7 @@ export class SidebarPlusWorkspaceTabsService implements OnDestroy {
             this.pending = setTimeout(() => {
                 this.pending = undefined
                 this.sync()
-            }, 0)
+            }, SidebarPlusWorkspaceTabsService.SYNC_DELAY_MS)
         })
     }
 

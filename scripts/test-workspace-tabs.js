@@ -467,6 +467,20 @@ test('narrow tabs install the scroll strip machinery on their own', () => {
     f.service.ngOnDestroy()
 })
 
+test('a burst of tab events is coalesced into one sync', () => {
+    const f = fixture(); f.app.ready$.next(); f.interact()
+    const tab = f.add({ profile: { id: 'p' } })
+    // What opening a tab actually looks like: several events, plus the strip's
+    // ResizeObserver firing on every frame of the open animation.
+    f.app.tabOpened$.next(tab)
+    for (let i = 0; i < 5; i++) {
+        f.app.tabsChanged$.next()
+        f.app.activeTabChange$.next(tab)
+    }
+    assert.equal(f.outsideTimers(), 1)
+    f.service.ngOnDestroy()
+})
+
 test('dragging suspends DOM synchronization until native reorder completes', () => {
     const f = fixture(); f.app.ready$.next()
     const pro = f.add({ profile: { id: 'p' } }); f.add({ profile: { id: 'd' } }); f.service.sync()
