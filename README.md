@@ -195,6 +195,11 @@ the view can be **frozen** on one session so it stops following the focused tab.
   nothing transits; a copy downloads to a temporary folder and uploads back,
   with each file on its own line of the transfer manager. An existing name is
   refused rather than overwritten, and a folder cannot be pasted into itself
+- **Names that are already taken** are a question, not a refusal: uploading,
+  dropping or copying onto an existing name offers **Keep both** (renames the
+  incoming file the Explorer way, `report (2).pdf`), **Overwrite**, or **Skip**,
+  with "do this for the remaining files" for a batch. `Enter` keeps both; `Esc`
+  skips.
 - **Pasting files copied in your OS file manager**: copy in Explorer, Finder or
   a Linux file manager, then `Ctrl-V` in the panel to upload them into the
   folder on screen — files and whole folders. A freshly copied OS selection

@@ -9,6 +9,7 @@ import { SidebarPlusTreeComponent } from './components/sidebarTree.component'
 import { SidebarPlusSftpComponent } from './components/sftpPanel.component'
 import { SidebarPlusSftpBrowserComponent } from './components/sftpBrowser.component'
 import { ConfirmModalComponent } from './components/confirmModal.component'
+import { SftpConflictModalComponent } from './components/sftpConflictModal.component'
 import { SnippetsModalComponent } from './components/snippetsModal.component'
 import { TagsModalComponent } from './components/tagsModal.component'
 import { NoteModalComponent } from './components/noteModal.component'
@@ -60,6 +61,7 @@ const SIDEBAR_PANEL_CONTRIBUTION: BetterPanelContribution = {
         SidebarPlusSftpComponent,
         SidebarPlusSftpBrowserComponent,
         ConfirmModalComponent,
+        SftpConflictModalComponent,
         SnippetsModalComponent,
         NoteModalComponent,
         TagsModalComponent,

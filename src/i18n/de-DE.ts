@@ -87,11 +87,7 @@ const de_DE: Record<string, string> = {
     '{name} is not a folder — sending to {path}': '{name} ist kein Ordner — wird nach {path} gesendet',
 
     // sftpBrowser.component.ts — confirmOverwrite()
-    '{names}, and {rest, plural, one {# more} other {# more}}': '{names} und {rest, plural, one {# weiterer} other {# weitere}}',
-    '{count} files already exist under {destination} and will be overwritten: {list}. Continue?':
-        '{count} Dateien existieren bereits unter {destination} und werden überschrieben: {list}. Fortfahren?',
-    'A file already exists under {destination} and will be overwritten: {list}. Continue?':
-        'Eine Datei existiert bereits unter {destination} und wird überschrieben: {list}. Fortfahren?',
+
     'Overwrite': 'Überschreiben',
 
     // sftpBrowser.component.ts — reportDrop()
@@ -151,6 +147,14 @@ const de_DE: Record<string, string> = {
     'The clipboard holds no files': 'Die Zwischenablage enthält keine Dateien',
     'This folder is empty.': 'Dieser Ordner ist leer.',
     'This transfer belongs to another session: {label}': 'Dieser Transfer gehört zu einer anderen Sitzung: {label}',
+    '"{name}" already exists in {destination}.': '„{name}“ existiert bereits in {destination}.',
+    'Keep both renames the file that is being uploaded; overwrite replaces the one on the server.':
+        'Beide behalten benennt die hochgeladene Datei um; Überschreiben ersetzt die Datei auf dem Server.',
+    'Keep both': 'Beide behalten',
+    'Skip': 'Überspringen',
+    'Do this for the remaining files': 'Für die restlichen Dateien ebenso',
+    'Nothing was uploaded — every file was skipped': 'Nichts hochgeladen — alle Dateien wurden übersprungen',
+    '{succeeded} uploaded, {failed} skipped': '{succeeded} hochgeladen, {failed} übersprungen',
     'Tab width': 'Tabbreite',
     'Tabby gives every tab 200px, which fits three cards on a wide window. Narrower tabs fit more of them; the strip scrolls and its arrows appear on their own.':
         'Tabby gibt jedem Tab 200 px, womit in ein breites Fenster nur drei passen. Schmalere Tabs lassen mehr zu; die Leiste scrollt und ihre Pfeile erscheinen von selbst.',

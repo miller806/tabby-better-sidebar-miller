@@ -3,6 +3,21 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.38 (2026-11-02)
+
+- **A name collision is now a three-way question** instead of a refusal, for
+  uploads from the OS clipboard, drops from the file manager, and copies pasted
+  between remote folders alike: **Keep both** renames the incoming file the
+  Explorer way (`report (2).pdf`), **Overwrite** replaces the file on the server,
+  **Skip** leaves it alone — with *do this for the remaining files* covering a
+  batch. Previously the only way to keep both was to delete the remote file
+  first, and a dropped folder asked one all-or-nothing "overwrite?" question.
+- Nothing destructive is the default: `Enter` keeps both, `Esc` skips, and
+  dismissing the dialog never overwrites. A batch where every file was skipped
+  is reported as a notice, not an error.
+- The kept name is checked against a fresh listing, and names handed out during
+  a batch are remembered, so two files never end up with the same new name.
+
 ## 1.0.37 (2026-11-02)
 
 - **The tab strip now fills the bar.** Tabby sizes it to its content

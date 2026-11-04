@@ -87,11 +87,7 @@ const es_ES: Record<string, string> = {
     '{name} is not a folder — sending to {path}': '{name} no es una carpeta — enviando a {path}',
 
     // sftpBrowser.component.ts — confirmOverwrite()
-    '{names}, and {rest, plural, one {# more} other {# more}}': '{names}, y {rest, plural, one {# más} other {# más}}',
-    '{count} files already exist under {destination} and will be overwritten: {list}. Continue?':
-        '{count} archivos ya existen en {destination} y se sobrescribirán: {list}. ¿Continuar?',
-    'A file already exists under {destination} and will be overwritten: {list}. Continue?':
-        'Ya existe un archivo en {destination} que se sobrescribirá: {list}. ¿Continuar?',
+
     'Overwrite': 'Sobrescribir',
 
     // sftpBrowser.component.ts — reportDrop()
@@ -147,6 +143,14 @@ const es_ES: Record<string, string> = {
     'The clipboard holds no files': 'El portapapeles no contiene archivos',
     'This folder is empty.': 'Esta carpeta está vacía.',
     'This transfer belongs to another session: {label}': 'Esta transferencia pertenece a otra sesión: {label}',
+    '"{name}" already exists in {destination}.': '«{name}» ya existe en {destination}.',
+    'Keep both renames the file that is being uploaded; overwrite replaces the one on the server.':
+        'Conservar ambos renombra el archivo que se sube; sobrescribir reemplaza el del servidor.',
+    'Keep both': 'Conservar ambos',
+    'Skip': 'Omitir',
+    'Do this for the remaining files': 'Hacer lo mismo con los archivos restantes',
+    'Nothing was uploaded — every file was skipped': 'No se subió nada: se omitieron todos los archivos',
+    '{succeeded} uploaded, {failed} skipped': '{succeeded} subidos, {failed} omitidos',
     'Tab width': 'Ancho de las pestañas',
     'Tabby gives every tab 200px, which fits three cards on a wide window. Narrower tabs fit more of them; the strip scrolls and its arrows appear on their own.':
         'Tabby da 200 px a cada pestaña, con lo que solo caben tres en una ventana ancha. Con pestañas más estrechas caben más; la tira se desplaza y sus flechas aparecen solas.',

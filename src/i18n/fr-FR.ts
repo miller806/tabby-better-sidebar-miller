@@ -101,11 +101,7 @@ const fr_FR: Record<string, string> = {
     '{name} is not a folder — sending to {path}': '{name} n’est pas un dossier — envoi dans {path}',
 
     // sftpBrowser.component.ts — confirmOverwrite()
-    '{names}, and {rest, plural, one {# more} other {# more}}': '{names}, et {rest, plural, one {# autre} other {# autres}}',
-    '{count} files already exist under {destination} and will be overwritten: {list}. Continue?':
-        '{count} fichiers existent déjà sous {destination} et seront écrasés : {list}. Continuer ?',
-    'A file already exists under {destination} and will be overwritten: {list}. Continue?':
-        'Un fichier existe déjà sous {destination} et sera écrasé : {list}. Continuer ?',
+
     'Overwrite': 'Écraser',
 
     // sftpBrowser.component.ts — reportDrop()
@@ -172,6 +168,14 @@ const fr_FR: Record<string, string> = {
     'The clipboard holds no files': 'Le presse-papiers ne contient aucun fichier',
     'This folder is empty.': 'Ce dossier est vide.',
     'This transfer belongs to another session: {label}': 'Ce transfert appartient à une autre session : {label}',
+    '"{name}" already exists in {destination}.': '« {name} » existe déjà dans {destination}.',
+    'Keep both renames the file that is being uploaded; overwrite replaces the one on the server.':
+        'Conserver les deux renomme le fichier envoyé ; remplacer écrase celui du serveur.',
+    'Keep both': 'Conserver les deux',
+    'Skip': 'Ignorer',
+    'Do this for the remaining files': 'Faire de même pour les fichiers restants',
+    'Nothing was uploaded — every file was skipped': 'Rien n’a été envoyé — tous les fichiers ont été ignorés',
+    '{succeeded} uploaded, {failed} skipped': '{succeeded} envoyés, {failed} ignorés',
     'Tab width': 'Largeur des onglets',
     'Tabby gives every tab 200px, which fits three cards on a wide window. Narrower tabs fit more of them; the strip scrolls and its arrows appear on their own.':
         'Tabby donne 200 px à chaque onglet, ce qui n’en place que trois sur une fenêtre large. Des onglets plus étroits en tiennent davantage ; la bande défile et ses flèches apparaissent d’elles-mêmes.',

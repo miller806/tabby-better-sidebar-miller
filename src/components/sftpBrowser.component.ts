@@ -26,6 +26,8 @@ import { SidebarPlusTransfersService } from '../transfersRegistry.service'
 import { SidebarPlusVisibilityService } from '../visibility.service'
 import { clampInViewport } from '../viewport'
 import { ConfirmModalComponent } from './confirmModal.component'
+import { ConflictAnswer, SftpConflictModalComponent } from './sftpConflictModal.component'
+import { freeRemoteName } from '../remoteNames'
 
 /**
  * One rendered row, computed once instead of on every change detection pass.
@@ -1619,12 +1621,10 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
             if (!plan.files.length && !plan.directories.length) {
                 return
             }
-            const collisions = await this.findCollisions(plan.files)
-            // Nothing has been written at this point — not even a directory —
-            // so turning the question down leaves the server exactly as it was.
-            if (collisions.length && !await this.confirmOverwrite(collisions, destination)) {
-                return
-            }
+            // Nothing has been written at this point — not even a directory — so
+            // every answer below leaves the server exactly as it found it until
+            // the plan itself runs.
+            plan.files = await this.resolveDropCollisions(plan.files, destination)
             const failed = await this.runPlan(plan)
             this.reportDrop(plan, failed, destination)
             await this.refreshListing()
@@ -1705,7 +1705,7 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
      * `stat()`, which follows links and reports a dangling one as free (piège
      * #50).
      */
-    private async findCollisions (files: PlannedUpload[]): Promise<string[]> {
+    private async findCollisions (files: PlannedUpload[]): Promise<PlannedUpload[]> {
         const byDirectory = new Map<string, PlannedUpload[]>()
         for (const file of files) {
             const parent = posix.dirname(file.remotePath)
@@ -1716,38 +1716,62 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
                 byDirectory.set(parent, [file])
             }
         }
-        const collisions: string[] = []
+        const collisions: PlannedUpload[] = []
         for (const [directory, bucket] of byDirectory) {
             const entries = await this.sftp.readdir(directory).catch(() => [])
             const existing = new Set(entries.map(entry => entry.name))
             for (const file of bucket) {
                 if (existing.has(posix.basename(file.remotePath))) {
-                    collisions.push(posix.basename(file.remotePath))
+                    collisions.push(file)
                 }
             }
         }
         return collisions
     }
 
-    /** Names enumerated up to this many; past it, a count. A modal listing forty files says nothing. */
-    private static readonly COLLISIONS_NAMED = 5
+    /** Names enumerated in a failure report; past it, the count is the message. */
+    private static readonly FAILURES_NAMED = 5
 
-    private async confirmOverwrite (collisions: string[], destination: string): Promise<boolean> {
-        const named = collisions.slice(0, SidebarPlusSftpBrowserComponent.COLLISIONS_NAMED)
-        const rest = collisions.length - named.length
-        const list = rest > 0
-            ? this.i18n.t('{names}, and {rest, plural, one {# more} other {# more}}', { names: named.join(', '), rest })
-            : named.join(', ')
-        const message = collisions.length > 1
-            ? this.i18n.t(
-                '{count} files already exist under {destination} and will be overwritten: {list}. Continue?',
-                { count: collisions.length, destination, list },
-            )
-            : this.i18n.t(
-                'A file already exists under {destination} and will be overwritten: {list}. Continue?',
-                { destination, list },
-            )
-        return await this.ask(message, this.i18n.t('Overwrite'))
+    /**
+     * Settles every name the drop would overwrite, and answers with the files
+     * that survived — a skipped one simply leaves the plan.
+     *
+     * Same three answers as a paste, and same "do this for the remaining files":
+     * one dialog per collision on a dropped folder would be thirty questions,
+     * which is why the first one offers to cover the rest.
+     */
+    private async resolveDropCollisions (files: PlannedUpload[], destination: string): Promise<PlannedUpload[]> {
+        const collisions = await this.findCollisions(files)
+        if (!collisions.length) {
+            return files
+        }
+        const kept: PlannedUpload[] = []
+        const taken = new Map<string, Set<string>>()
+        const skip = new Set<PlannedUpload>()
+        let standing: ConflictAnswer|null = null
+        for (const [index, file] of collisions.entries()) {
+            const directory = posix.dirname(file.remotePath)
+            if (!taken.has(directory)) {
+                const entries = await this.sftp.readdir(directory).catch(() => [])
+                taken.set(directory, new Set(entries.map(entry => entry.name)))
+            }
+            const names = taken.get(directory)
+            const resolution = await this.settleConflict(posix.basename(file.remotePath), directory, standing, index < collisions.length - 1)
+            standing = resolution.standing
+            if (resolution.name === null) {
+                skip.add(file)
+            } else if (resolution.name !== posix.basename(file.remotePath)) {
+                file.remotePath = posix.join(directory, resolution.name)
+            }
+            names?.add(resolution.name ?? posix.basename(file.remotePath))
+        }
+        void destination
+        for (const file of files) {
+            if (!skip.has(file)) {
+                kept.push(file)
+            }
+        }
+        return kept
     }
 
     /**
@@ -1814,7 +1838,7 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
                     'Could not send {failed, plural, one {# file} other {# files}} of {total}',
                     { failed: failed.length, total: plan.files.length },
                 ),
-                failed.slice(0, SidebarPlusSftpBrowserComponent.COLLISIONS_NAMED).join(', '),
+                failed.slice(0, SidebarPlusSftpBrowserComponent.FAILURES_NAMED).join(', '),
             )
         }
     }
@@ -2435,16 +2459,28 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         this.uploadInFlight = true
         let uploaded = 0
         let failed = 0
+        let skipped = 0
         let firstError: string|null = null
+        // Once the user answers "do this for the remaining files", every later
+        // collision takes that answer without asking again.
+        let standing: ConflictAnswer|null = null
         try {
-            for (const local of paths) {
-                const name = basename(local)
-                const target = posix.join(destination, name)
-                if (existing.has(name)) {
-                    failed++
-                    firstError = firstError ?? this.i18n.t('{name} already exists in {destination}', { name, destination })
+            for (const [index, local] of paths.entries()) {
+                const original = basename(local)
+                const resolution = existing.has(original)
+                    ? await this.settleConflict(original, destination, standing, index < paths.length - 1)
+                    : { name: original, standing }
+                standing = resolution.standing
+                const name = resolution.name
+                if (name === null) {
+                    skipped++
                     continue
                 }
+                const target = posix.join(destination, name)
+                // A name produced by "keep both" can collide with another file of
+                // the same batch: the set is the authority, so it learns the name
+                // before the next iteration asks.
+                existing.add(name)
                 try {
                     const stats = await fs.promises.stat(local)
                     if (stats.isDirectory()) {
@@ -2465,15 +2501,67 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         if (destination === this.path) {
             await this.refreshListing()
         }
+        if (uploaded === 0 && skipped === paths.length) {
+            // Every collision was answered with "skip": a refusal the user asked
+            // for is not an error to report in red.
+            this.notices.notice(this.i18n.t('Nothing was uploaded — every file was skipped'))
+            return
+        }
         if (uploaded === 0) {
             this.notices.error(this.i18n.t('No upload succeeded'), firstError ?? undefined)
-        } else if (failed === 0) {
+        } else if (failed === 0 && skipped === 0) {
             this.notices.notice(paths.length === 1
                 ? this.i18n.t('{name} uploaded to {destination}', { name: basename(paths[0]), destination })
                 : this.i18n.t('{count} items uploaded to {destination}', { count: uploaded, destination }))
+        } else if (failed === 0) {
+            this.notices.notice(this.i18n.t('{succeeded} uploaded, {failed} skipped', { succeeded: uploaded, failed: skipped }))
         } else {
             this.notices.error(this.i18n.t('{succeeded} uploaded, {failed} failed', { succeeded: uploaded, failed }), firstError ?? undefined)
         }
+    }
+
+    /**
+     * Asks what to do about a name that is already taken, and answers with the
+     * name to write under — or null to skip the file — plus the answer to keep
+     * for the rest of the batch.
+     *
+     * `standing` is a previous "do this for the remaining files": it is used
+     * before the modal ever opens.
+     */
+    private async settleConflict (
+        name: string,
+        destination: string,
+        standing: ConflictAnswer|null,
+        moreToCome: boolean,
+    ): Promise<{ name: string|null, standing: ConflictAnswer|null }> {
+        const answer = standing ?? await this.askConflict(name, destination, moreToCome)
+        const kept = standing ?? (answer?.applyToAll ? answer : null)
+        // A dismissed modal answers nothing: skipping is the only safe reading.
+        const choice = answer?.choice ?? 'skip'
+        if (choice === 'skip') {
+            return { name: null, standing: kept }
+        }
+        if (choice === 'overwrite') {
+            return { name, standing: kept }
+        }
+        // Re-read rather than trusting the listing taken before the modal: the
+        // user may have been sitting on this question for a while.
+        const listing = await this.sftp.readdir(destination).catch(() => [])
+        return { name: freeRemoteName(name, new Set(listing.map(entry => entry.name))), standing: kept }
+    }
+
+    /**
+     * The three-way modal, or null when it was dismissed.
+     *
+     * Dismissal reads as "skip": Échap is the one gesture that must never
+     * overwrite anything.
+     */
+    private async askConflict (name: string, destination: string, many: boolean): Promise<ConflictAnswer|null> {
+        const modal = this.ngbModalService.open(SftpConflictModalComponent)
+        modal.componentInstance.name = name
+        modal.componentInstance.destination = destination
+        modal.componentInstance.many = many
+        return await modal.result.catch(() => null)
     }
 
     /**
@@ -2517,10 +2605,28 @@ export class SidebarPlusSftpBrowserComponent extends SFTPPanelComponent implemen
         let copied = 0
         let firstError: string|null = null
         try {
+            // A name already taken is a question, not a refusal — same three
+            // answers as an upload, and the same "for the remaining files".
+            let standing: ConflictAnswer|null = null
+            let index = 0
             for (const rejected of plan.rejected) {
-                firstError = firstError ?? (rejected.reason === 'inside'
-                    ? this.i18n.t('{name} cannot be copied into itself', { name: rejected.entry.name })
-                    : this.i18n.t('{name} already exists in {destination}', { name: rejected.entry.name, destination }))
+                if (rejected.reason === 'inside') {
+                    firstError = firstError ?? this.i18n.t('{name} cannot be copied into itself', { name: rejected.entry.name })
+                    continue
+                }
+                const resolution = await this.settleConflict(rejected.entry.name, destination, standing, index++ < plan.rejected.length - 1)
+                standing = resolution.standing
+                if (resolution.name === null) {
+                    continue
+                }
+                if (resolution.name !== rejected.entry.name) {
+                    rejected.entry.name = resolution.name
+                }
+                if (cut && sameSession) {
+                    plan.move.push(rejected.entry)
+                } else {
+                    plan.transfer.push(rejected.entry)
+                }
             }
             for (const entry of plan.move) {
                 try {

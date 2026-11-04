@@ -199,3 +199,30 @@ test('the transfer list follows the open dock and falls back to the sidebar when
     sidebar.show()
     assert.equal(sidebar.transfersInDock, false)
 })
+
+/**
+ * `freeRemoteName()` is what "Keep both" writes under. Its contract is small but
+ * load-bearing: never hand back a name that is taken, and never lose the
+ * extension — the remote file has to stay openable by whatever reads it.
+ */
+function loadNames () {
+    const exports = {}
+    const js = ts.transpileModule(fs.readFileSync('src/remoteNames.ts', 'utf8'), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+    }).outputText
+    vm.runInNewContext(js, { exports })
+    return exports
+}
+
+test('"keep both" produces the next free name, extension intact', () => {
+    const { freeRemoteName } = loadNames()
+    const taken = new Set(['report.pdf', 'report (2).pdf'])
+    assert.equal(freeRemoteName('report.pdf', taken), 'report (3).pdf')
+    // A name nobody holds is returned untouched.
+    assert.equal(freeRemoteName('fresh.tar.gz', new Set(['other.tar.gz'])), 'fresh.tar.gz')
+    // Only the last extension moves: `.tar.gz` keeps its compound tail intact
+    // and a dotfile keeps its whole name as the stem.
+    assert.equal(freeRemoteName('bundle.tar.gz', new Set(['bundle.tar.gz'])), 'bundle.tar (2).gz')
+    assert.equal(freeRemoteName('.bashrc', new Set(['.bashrc'])), '.bashrc (2)')
+    assert.equal(freeRemoteName('README', new Set(['README'])), 'README (2)')
+})

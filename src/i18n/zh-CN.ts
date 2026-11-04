@@ -87,11 +87,7 @@ const zh_CN: Record<string, string> = {
     '{name} is not a folder — sending to {path}': '{name} 不是文件夹——正在发送到 {path}',
 
     // sftpBrowser.component.ts — confirmOverwrite()
-    '{names}, and {rest, plural, one {# more} other {# more}}': '{names}，以及另外 {rest, plural, other {# 项}}',
-    '{count} files already exist under {destination} and will be overwritten: {list}. Continue?':
-        '{destination} 下已存在 {count} 个文件，将被覆盖：{list}。是否继续？',
-    'A file already exists under {destination} and will be overwritten: {list}. Continue?':
-        '{destination} 下已存在一个文件，将被覆盖：{list}。是否继续？',
+
     'Overwrite': '覆盖',
 
     // sftpBrowser.component.ts — reportDrop()
@@ -146,6 +142,14 @@ const zh_CN: Record<string, string> = {
     'The clipboard holds no files': '剪贴板里没有文件',
     'This folder is empty.': '此文件夹为空。',
     'This transfer belongs to another session: {label}': '此传输属于另一个会话：{label}',
+    '"{name}" already exists in {destination}.': '“{name}” 在 {destination} 中已存在。',
+    'Keep both renames the file that is being uploaded; overwrite replaces the one on the server.':
+        '「保留两者」会给正在上传的文件改名；「覆盖」会替换服务器上的文件。',
+    'Keep both': '保留两者',
+    'Skip': '跳过',
+    'Do this for the remaining files': '对其余文件也这样处理',
+    'Nothing was uploaded — every file was skipped': '没有上传任何文件——全部被跳过',
+    '{succeeded} uploaded, {failed} skipped': '成功上传 {succeeded} 项，跳过 {failed} 项',
     'Tab width': '标签宽度',
     'Tabby gives every tab 200px, which fits three cards on a wide window. Narrower tabs fit more of them; the strip scrolls and its arrows appear on their own.':
         'Tabby 固定给每个标签 200px，在宽窗口里只放得下三个。标签变窄就能放下更多；标签栏会自动滚动，箭头也会自动出现。',
