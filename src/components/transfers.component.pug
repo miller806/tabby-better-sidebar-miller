@@ -32,9 +32,15 @@
             [class.transfer-failed]='entry.state === "failed" || entry.state === "unsound"',
             [title]='entry.tooltip'
         )
+            //- The arrow says which way, the tick says it is over. A finished
+            //- line used to keep its arrow, so the one thing worth spotting in a
+            //- list of finished transfers — that this one landed — was missing.
             .fa.fa-fw.fas.transfer-arrow(
-                [class.fa-arrow-down]='entry.direction === "down"',
-                [class.fa-arrow-up]='entry.direction === "up"'
+                [class.fa-arrow-down]='entry.direction === "down" && entry.state !== "done"',
+                [class.fa-arrow-up]='entry.direction === "up" && entry.state !== "done"',
+                [class.fa-check]='entry.state === "done"',
+                [class.fa-circle-exclamation]='entry.state === "unsound"',
+                [class.fa-ban]='entry.state === "cancelled"'
             )
             //- Every value here is a plain field of the entry, never a call:
             //- change detection runs these expressions on every pass, and Tabby
@@ -86,3 +92,8 @@
                 [title]="entry.state === 'active' ? ('Cancel this transfer and remove it' | translate) : ('Remove from the list' | translate)"
             )
                 .fa.fa-fw.fas.fa-trash
+            //- One track per row, along its bottom edge: 2px tall, so it costs no
+            //- row height and no reflow, and it reads at a glance which of a
+            //- dozen lines is still moving and how far the finished ones got.
+            .transfer-progress
+                .transfer-progress-fill([style.width.%]='entry.progressPercent')

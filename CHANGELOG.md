@@ -3,6 +3,21 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.36 (2026-11-02)
+
+- Every transfer line now carries a **progress bar** along its bottom edge: 2px,
+  absolutely positioned, so it costs neither a row of height nor a reflow of the
+  figures beside it. It fills from 0 to 100 while the transfer runs, and a
+  finished one is always full — a bar reading 99% next to a "done" label would be
+  a bug in the picture, not in the transfer.
+- **Finished uploads are now unmistakable**: a green tick replaces the arrow, and
+  the full bar takes the same success colour, so a landed file is picked out of a
+  list at a glance instead of by reading the figures. Cancelled lines keep their
+  partial bar in the danger colour (it says how far they got), and failed or
+  incomplete-at-destination ones do the same with their own icon.
+- The bar is 3px in the right-hand dock, where the transfer list sits under a
+  file table and a 2px track read as an underline.
+
 ## 1.0.35 (2026-11-02)
 
 - The grouped tab-bar buttons are **one row again**. Two rows inside

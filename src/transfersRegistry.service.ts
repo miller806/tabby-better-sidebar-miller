@@ -62,6 +62,16 @@ export interface TransferEntry {
     handsOver: boolean
     /** When the handover is estimated to be over. Only meaningful while the state is `handover`. */
     handoverUntil: number
+    /**
+     * What the row's progress bar shows.
+     *
+     * A finished transfer fills it, whatever `percent` happened to be when the
+     * last sample landed: the bar is a picture of the outcome, and a file that
+     * arrived reading 99% would be a bug in the picture, not in the transfer.
+     * Failed and cancelled lines keep the partial fill — that is the whole point
+     * of showing them on the same scale as the running ones.
+     */
+    progressPercent: number
     /** Where the entry lives on the server. Empty when the starter never said. */
     remotePath: string
     /** Which session carries it. Empty when the starter never said. */
@@ -249,6 +259,7 @@ export class SidebarPlusTransfersService {
                 name: transfer.getName(),
                 size,
                 percent: 0,
+                progressPercent: 0,
                 speed: 0,
                 state: 'active',
                 sizeLabel: size > 0 ? String(filesize(size)) : '',
@@ -433,12 +444,14 @@ export class SidebarPlusTransfersService {
             }
             const completed = entry.transfer.getCompletedBytes()
             entry.percent = entry.size > 0 ? Math.min(100, Math.round(completed / entry.size * 100)) : 0
+            entry.progressPercent = entry.percent
             entry.elapsedLabel = formatDuration((now - entry.startedAtMs) / 1000)
             this.updateSpeed(entry, completed, now)
             // `isComplete()` alone is not enough for a zero-byte transfer,
             // whose completed/size ratio never moves off 0.
             if (entry.transfer.isComplete() || (entry.size > 0 && completed >= entry.size)) {
                 entry.percent = 100
+                entry.progressPercent = 100
                 if (entry.handsOver) {
                     entry.handoverUntil = now + this.handoverDuration(entry.size)
                     this.finish(entry, 'handover', now)
@@ -495,6 +508,10 @@ export class SidebarPlusTransfersService {
     /** Freezes a finished line: the duration it took, and no figure that keeps moving. */
     private finish (entry: TransferEntry, state: TransferState, now: number): void {
         entry.state = state
+        // The bar is a picture of the outcome, so a transfer that arrived is
+        // full even if the last sample landed at 99 %: a bar disagreeing with
+        // the tick beside it is a bug in the picture, not in the transfer.
+        entry.progressPercent = state === 'done' ? 100 : entry.progressPercent
         entry.elapsedLabel = formatDuration((now - entry.startedAtMs) / 1000)
         entry.etaLabel = ''
         entry.speedLabel = ''

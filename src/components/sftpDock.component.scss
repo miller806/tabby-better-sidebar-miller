@@ -75,6 +75,12 @@ sidebar-plus-sftp-dock .sftp-dock-main sidebar-plus-transfers .transfer-session 
     max-width: 12rem;
 }
 
+// The dock's transfer list sits under a file table, where a 2px track reads as
+// an underline rather than as progress: one more pixel, still no row height.
+sidebar-plus-sftp-dock .sftp-dock-main sidebar-plus-transfers .transfer-progress {
+    height: 3px;
+}
+
 // The sidebar used to pad the panel with its own `.p-2` content box. In the dock
 // the panel is the whole column, so it needs its own inset — and the same
 // horizontal rhythm the sidebar uses (`.p-2`, half a rem), so the two panels

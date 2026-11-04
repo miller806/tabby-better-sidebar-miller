@@ -90,6 +90,7 @@ sidebar-plus-transfers {
     }
 
     .transfer-row {
+        position: relative;
         display: flex;
         align-items: center;
         gap: .25rem;
@@ -106,6 +107,35 @@ sidebar-plus-transfers {
                 opacity: 1;
             }
         }
+    }
+
+    // The progress track, along the bottom edge of the row.
+    //
+    // Absolutely positioned and 2px tall on purpose: a row in this list is a
+    // fixed height and the whole block is capped, so anything that took part in
+    // the flex layout would either shift the figures or add a row's worth of
+    // height to every line.
+    .transfer-progress {
+        position: absolute;
+        left: .25rem;
+        right: .25rem;
+        bottom: 1px;
+        height: 2px;
+        border-radius: 1px;
+        background-color: var(--theme-secondary);
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .transfer-progress-fill {
+        height: 100%;
+        width: 0;
+        border-radius: 1px;
+        background-color: var(--theme-primary);
+        // Only the width animates, and only for a fraction of a second: the
+        // registry refreshes at 500ms, and a longer easing would make the bar lag
+        // behind the percentage printed next to it.
+        transition: width 180ms linear, background-color 180ms ease;
     }
 
     // The name is the only part allowed to give way: it shrinks and ellipsises
@@ -208,6 +238,27 @@ sidebar-plus-transfers {
         opacity: .7;
     }
 
+    // What "finished" looks like: the tick and the full bar take the success
+    // colour, so a landed file is picked out of a list of rows at a glance
+    // rather than by reading the figures.
+    .transfer-done {
+        .transfer-arrow {
+            color: var(--theme-success, var(--bs-success, #2ea043));
+            opacity: 1;
+        }
+
+        .transfer-progress-fill {
+            background-color: var(--theme-success, var(--bs-success, #2ea043));
+        }
+    }
+
+    // A cancelled line keeps a partial bar in the danger colour: it says how far
+    // it got, which is the one thing "cancelled" alone does not.
+    .transfer-cancelled .transfer-progress-fill {
+        background-color: var(--theme-danger, #dc3545);
+        opacity: .8;
+    }
+
     .transfer-cancelled .transfer-name {
         opacity: .55;
         text-decoration: line-through;
@@ -223,6 +274,14 @@ sidebar-plus-transfers {
 
         .transfer-figure {
             color: var(--bs-danger);
+        }
+
+        .transfer-arrow {
+            color: var(--theme-danger, var(--bs-danger, #dc3545));
+        }
+
+        .transfer-progress-fill {
+            background-color: var(--theme-danger, var(--bs-danger, #dc3545));
         }
     }
 }
