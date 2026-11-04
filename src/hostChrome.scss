@@ -140,15 +140,13 @@ body.sidebar-plus-toolbar-grouped .tab-bar {
         > .d-flex { display: contents; }
     }
 
-    // One divider, on the tab side of the cluster: the tabs end, the buttons
-    // begin.
-    > .btn-group:has(+ .btn-space) {
-        border-right: 1px solid var(--theme-secondary);
-        padding-right: 4px;
-    }
-
-    > .btn-space + .btn-group {
-        padding-left: 4px;
+    // Both groups read as one cluster: no divider, no extra padding of their
+    // own. What separates the buttons from the tabs is the drag spacer between
+    // them, given a fixed width so it stays grabbable — and so the tabs can
+    // claim everything else.
+    > .btn-space {
+        flex: 0 0 40px;
+        min-width: 40px;
     }
 }
 
@@ -163,16 +161,27 @@ body.sidebar-plus-toolbar-grouped .tab-bar {
 // `flex: 0 0 auto` and not just a width: Tabby keeps a fixed `flex-basis` on
 // every header, and a flex-basis always wins over `width` — the tagged cards
 // further down this file carry the same override for the same reason.
+// The strip takes everything the buttons and the drag spacer leave, and the
+// tabs grow into it up to their ceiling. Tabby's own rule is `flex: 0 1 auto`
+// with content-sized headers, which stops the strip wherever the last tab
+// happens to end and leaves the rest of the bar to the spacer — the dead gap
+// that made a dozen tabs look like they had run out of room.
+body.sidebar-plus-tabs-compact .tab-bar > .tabs,
+body.sidebar-plus-tabs-tight .tab-bar > .tabs {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 body.sidebar-plus-tabs-compact .tab-bar > .tabs tab-header {
-    flex: 0 0 auto !important;
-    width: max-content !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
     min-width: 92px !important;
     max-width: 168px !important;
 }
 
 body.sidebar-plus-tabs-tight .tab-bar > .tabs tab-header {
-    flex: 0 0 auto !important;
-    width: max-content !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
     min-width: 72px !important;
     max-width: 124px !important;
 }
@@ -332,8 +341,12 @@ tab-header .sidebar-plus-terminal-tag {
 }
 
 // Scroll controls live outside CDK's drop list, preserving native reorder indices.
+// `flex: 1 1 auto`, not Tabby's `0 1 auto`: the strip owns the space the
+// buttons and the drag spacer leave, whether it is scrolling or not. Sizing it
+// to its content is what ended the strip at the last tab and handed the rest of
+// the bar to the drag spacer.
 .tab-bar:has(> .sidebar-plus-tab-scroll) > .tabs {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     min-width: 0;
     overflow-x: auto;
     overflow-y: hidden;
@@ -363,11 +376,13 @@ tab-header .sidebar-plus-terminal-tag {
 // but it still has to respect the setting, or the cards that show the most
 // information would be the ones crowding the strip.
 body.sidebar-plus-tabs-compact tab-header.sidebar-plus-has-tags {
+    flex: 1 1 auto !important;
     min-width: 116px !important;
     max-width: 172px !important;
 }
 
 body.sidebar-plus-tabs-tight tab-header.sidebar-plus-has-tags {
+    flex: 1 1 auto !important;
     min-width: 96px !important;
     max-width: 132px !important;
 }

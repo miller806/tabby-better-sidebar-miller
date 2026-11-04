@@ -3,6 +3,19 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.37 (2026-11-02)
+
+- **The tab strip now fills the bar.** Tabby sizes it to its content
+  (`flex: 0 1 auto`) and hands whatever is left to its drag spacer, so a dozen
+  tabs ended in the middle of the bar with a dead gap before the buttons — which
+  looked like the tabs had run out of room. The strip takes the space the
+  buttons and the spacer leave, and the tabs grow into it up to their ceiling;
+  past that it scrolls, as before.
+- **The two right-hand button groups read as one cluster**: the divider between
+  them is gone, and each group's extra padding with it. What separates the
+  buttons from the tabs is the drag spacer, now a fixed 40px so it stays
+  grabbable and the tabs can claim everything else.
+
 ## 1.0.36 (2026-11-02)
 
 - Every transfer line now carries a **progress bar** along its bottom edge: 2px,
