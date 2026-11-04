@@ -3,6 +3,20 @@
 All notable changes to `tabby-better-sidebar` are documented here, one entry
 per npm release. Dates are the npm publication dates.
 
+## 1.0.39 (2026-11-02)
+
+- **Opening more tabs no longer makes the tab bar taller.** Tagged cards were
+  sharing the strip's width, so every additional tab squeezed them a little
+  further, wrapped their tags onto one more line, and raised the tallest card —
+  which raised the bar, which stretched every card, which pushed the terminal
+  down a row at a time. Tagged cards are pinned to their content width again;
+  only the plain one-line tabs share the spare width, so the strip still fills
+  the bar.
+- The tagged bar also has a ceiling now (`max-height`, three lines of tags). Tag
+  wrapping is unbounded, and an uncapped bar could still drag the rest of the
+  window with it when a single card carried a long tag list; past the ceiling the
+  rail clips, and the card's tooltip still lists every tag.
+
 ## 1.0.38 (2026-11-02)
 
 - **A name collision is now a three-way question** instead of a refusal, for

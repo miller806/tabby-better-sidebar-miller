@@ -49,8 +49,14 @@ tab-header.sidebar-plus-workspace-tab-hidden {
 // Two-line native headers: title first, complete tag collection beneath it.
 // Scoped to tagged headers; hiding a workspace must still win over grid layout.
 .tab-bar:has(tab-header.sidebar-plus-has-tags:not(.sidebar-plus-workspace-tab-hidden)) {
+    // `height: auto` so a card can be tall enough for its tags, and a ceiling so
+    // it cannot go on doing that forever: tags wrap, wrapping is unbounded, and
+    // an uncapped bar pushes the terminal down and drags every other surface in
+    // the window with it. Past three lines the rail clips — the card's own title
+    // still lists every tag.
     height: auto !important;
     min-height: 62px;
+    max-height: 108px;
     align-items: stretch;
 
     > .tabs {
@@ -172,14 +178,16 @@ body.sidebar-plus-tabs-tight .tab-bar > .tabs {
     min-width: 0;
 }
 
-body.sidebar-plus-tabs-compact .tab-bar > .tabs tab-header {
+// Only the plain one-line cards share the width; tagged ones are pinned to their
+// content above, where the reason is written out.
+body.sidebar-plus-tabs-compact .tab-bar > .tabs tab-header:not(.sidebar-plus-has-tags) {
     flex: 1 1 auto !important;
     width: auto !important;
     min-width: 92px !important;
     max-width: 168px !important;
 }
 
-body.sidebar-plus-tabs-tight .tab-bar > .tabs tab-header {
+body.sidebar-plus-tabs-tight .tab-bar > .tabs tab-header:not(.sidebar-plus-has-tags) {
     flex: 1 1 auto !important;
     width: auto !important;
     min-width: 72px !important;
@@ -286,7 +294,11 @@ tab-header .sidebar-plus-terminal-tags {
     width: 100%;
     max-width: none;
     margin: 0;
-    overflow: visible;
+    // The ceiling the bar's `max-height` implies: a card that would need a
+    // fourth line clips instead of growing the strip. `title` on the rail lists
+    // every tag either way.
+    max-height: 100%;
+    overflow: hidden;
     -webkit-app-region: no-drag;
 }
 
@@ -375,14 +387,28 @@ tab-header .sidebar-plus-terminal-tag {
 // A tagged card carries two lines, so it keeps a wider floor than a plain tab —
 // but it still has to respect the setting, or the cards that show the most
 // information would be the ones crowding the strip.
+// Tagged cards do **not** grow, and that is the whole point of these two rules.
+//
+// A tagged card is two lines, sized by its content: `height: auto`, a grid of
+// title over a wrapping tag rail, and the bar around them `height: auto` so a
+// card can be tall enough for its tags. Let such a card share the width with its
+// neighbours and every tab that opens squeezes it a little further, wraps its
+// tags onto one more line, and raises the tallest card — which raises the bar,
+// which stretches every card, which pushes the terminal down a row at a time.
+// Content width keeps a card's tag layout — and therefore the bar's height —
+// the same however many tabs are open.
+body.sidebar-plus-tabs-compact tab-header.sidebar-plus-has-tags,
+body.sidebar-plus-tabs-tight tab-header.sidebar-plus-has-tags {
+    flex: 0 0 auto !important;
+    width: max-content !important;
+}
+
 body.sidebar-plus-tabs-compact tab-header.sidebar-plus-has-tags {
-    flex: 1 1 auto !important;
     min-width: 116px !important;
     max-width: 172px !important;
 }
 
 body.sidebar-plus-tabs-tight tab-header.sidebar-plus-has-tags {
-    flex: 1 1 auto !important;
     min-width: 96px !important;
     max-width: 132px !important;
 }
